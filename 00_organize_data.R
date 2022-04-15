@@ -18,15 +18,9 @@ library(fs)
 
 # REMOTE SENSING DATA -----------------------------------------------------
 
-# Import plot coordinates:
 
-plots_cf_coords <- read.csv("input/RS/plots_cf_coords.csv")
+# Import Landsat 5 data ---------------------------------------------------
 
-plots_cf_coords <- plots_cf_coords %>%
-  mutate(plot_id = as.character(X)) %>%
-  select(-X)
-
-# Import Landsat 5 data:
 
 # NDVI: 
 
@@ -123,6 +117,8 @@ ndwi_l5 <- ndwi_l5 %>%
   separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
   mutate(date = ymd(date))
 
+# Import landsat 7 data ---------------------------------------------------
+
 # Repeat with landsat 7:
 
 # NDVI:
@@ -214,6 +210,9 @@ ndwi_l7 <- ndwi_l7 %>%
 
 # Add time series that have been filtered with cloud mask
 
+# Add ts that have been filters with cloud mask --------------------------
+
+
 # Landsat 5
 
 ndvinc_ts_files <- "input/RS/l5_noclouds/"  # file directory
@@ -245,8 +244,11 @@ dim(ndvinc_l5_ts_tbl)
 ndvinc_l5_ts_tbl <- ndvinc_l5_ts_tbl %>%
   separate(id, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
   mutate(date = ymd(date)) %>%
-  select(-file_path)
+  select(-file_path) %>%
+  filter(!is.na(ndvinc)) %>%
+  select(-lon, -lat)
 
+head(ndvinc_l5_ts_tbl)
 # Landsat 7
 
 ndvincl7_ts_files <- "input/RS/l7_noclouds/"  # file directory
@@ -278,12 +280,19 @@ dim(ndvinc_l7_ts_tbl)
 ndvinc_l7_ts_tbl <- ndvinc_l7_ts_tbl %>%
   separate(id, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
   mutate(date = ymd(date)) %>%
-  select(-file_path)
+  select(-file_path) %>%
+  filter(!is.na(ndvinc)) %>% # remove cloudy pixels
+  select(-lon, -lat)
 
+# Bind datasets -----------------------------------------------------------
 # Bind all datasets.
 # First join ndvi, evi, ndwi, ndvinc, ci1 and ci1, then bind landsat 5 and landsat 7 data
 
-l5 <- left_join(ndvi_l5, ndvinc_l5_ts_tbl, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+
+l5 <- left_join(ndvinc_l5_ts_tbl, ndvi_l5, by = c("plot_id", "sat_time", "landsat", "row_path", "date"))
+head(l5)
+
+l5 <- l5 %>%
   left_join(ci1_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(ci2_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(evi_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
@@ -291,14 +300,17 @@ l5 <- left_join(ndvi_l5, ndvinc_l5_ts_tbl, by = c("plot_id", "landsat", "row_pat
 
 head(l5)
 
-l7 <- left_join(ndvi_l7, ndvinc_l7_ts_tbl, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+l7 <- left_join(ndvinc_l7_ts_tbl, ndvi_l7, by = c("plot_id", "landsat", "row_path", "date", "sat_time")) %>%
   left_join(ci1_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(ci2_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(evi_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(ndwi_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) 
 
+head(l7)
+
 time_series <- bind_rows(l5, l7) %>%
-   arrange(plot_id, date)
+  arrange(plot_id, date) %>%
+  relocate(c("plot_id", "lat", "lon"), .before = landsat)
 
 head(time_series)
 
@@ -314,15 +326,14 @@ head(time_series)
 time_series <- time_series %>%
    distinct(plot_id, date, .keep_all= TRUE) 
 
-# Edit ndvinc column
+# Remove cloudy pixels ----------------------------------------------------
 
 time_series <- time_series %>%
-  mutate(cloud_mask = ifelse(is.na(ndvinc), "cloud", "no_cloud")) %>%
-  select(-ndvinc)
+  filter(ci1 > 2.8)
 
-head(time_series)
+# Export long dataset  ----------------------------------------------------
 
-# Export long dataset as csv file
+# as csv file and RData
 
 save(time_series, file = "output/time_series.RData")
 
@@ -334,8 +345,8 @@ time_series_plots <- split(time_series, time_series$plot_id)
 
 time_series_plots2 <- time_series_plots[-c(1:143)]
 
-lapply(names(time_series_plots2), function(x){
-  write_csv(time_series_plots2[[x]], path = paste("output/ts_plots/", x, ".csv", sep = ""))
+lapply(names(time_series_plots), function(x){
+  write_csv(time_series_plots[[x]], path = paste("output/ts_plots/", x, ".csv", sep = ""))
 })
 
 # FI DATA -----------------------------------------------------
