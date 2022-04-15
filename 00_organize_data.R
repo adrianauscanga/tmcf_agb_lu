@@ -314,6 +314,12 @@ time_series <- bind_rows(l5, l7) %>%
 
 head(time_series)
 
+time_series <- time_series %>%
+  filter(date > "1992-12-31")
+
+head(time_series)
+tail(time_series)
+
  time_series %>%
    filter(is.na(ndvi)) %>%
    group_by(landsat) %>%

@@ -33,11 +33,6 @@ for (i in ts_plots){
 }
 
 
-# Remove cloudy pixels ----------------------------------------------------
-
-
-
-
 # Run bfast ---------------------------------------------------------------
 
 # Loop for running bfast
@@ -65,8 +60,8 @@ break_moments <- NULL
 for(i in names){
   plotx <- mget(i) #search and "call" i(which is already in the environment)
   plotx <- data.frame(plotx)
-  ndvi <- plotx[,8]
-  date <- plotx[,4]
+  ndvi <- plotx[,9]
+  date <- plotx[,6]
   ts <- bfastts(ndvi, date, type = "irregular")
   ts <- na.remove(ts)
   ts_tsp <- attr(ts, "tsp")
