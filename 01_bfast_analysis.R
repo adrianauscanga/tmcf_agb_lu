@@ -86,3 +86,73 @@ for(i in names){
   
 }
 
+
+# Extract relevant information from bfast ---------------------------------
+
+# No. of breaks per plot
+
+bfast_breaks <- c(bfast_breaks, nobreaks)
+breaksxplot <- matrix(bfast_breaks, ncol=2, byrow=T) #must have 300 rows
+
+# Dates of breaks
+
+break_moments <- matrix(break_moments, ncol=1, byrow = T)
+break_moments <- as.data.frame(break_moments)
+break_moments <- separate(break_moments, V1, into = c("plot_id", "ts_index"), sep = ",", remove = TRUE)
+
+# Clean table
+
+break_moments <- break_moments %>%
+  mutate(ts_index= as.numeric(ts_index)) %>%
+  separate(plot_id, into = c("bfast", "plot_id"), sep = "bfast_", remove = TRUE) %>%
+  select(-bfast)
+
+# Function and loop to extract break dates
+# Make a function that selects the row number equivalent to ts_index in each plot dataset
+
+f <- function(df, x){
+  df[x,6]
+}
+
+# Make a list of plots with breaks
+
+plotwblist <- break_moments$plot_id
+plotwblist <- unique(plotwblist)
+
+
+# Loop applying f function
+
+breakdates <- NULL
+
+for(i in 1:nrow(break_moments)){
+  plotid <- break_moments[i, "plot_id"]
+  index <- break_moments[i, "ts_index"]
+  for(j in plotwblist){
+    plotx <- mget(j)
+    plotx <- as.data.frame(plotx)
+    if(j == plotid){
+      breakdate <- f(plotx, index)
+      breakdates <- c(breakdates, paste(j, breakdate, sep = ", "))
+    }
+  }
+}
+
+# Great!
+
+# Edit breakdates data and combine it with break moments
+
+
+breakdates <- matrix(breakdates, ncol=1, byrow = T)
+breakdates <- as.data.frame(breakdates)
+breakdates <- separate(breakdates, V1, into = c("plot_id", "break_dates"), sep = ",", remove = TRUE)
+
+# Clean table
+breakdates <- breakdates %>%
+  mutate(break_dates = as.Date(break_dates))
+
+break_moments <- cbind(break_moments, breakdates$break_dates)
+colnames(break_moments) <- c("plot_id", "ts_index", "break_dates")
+
+# To know which breaks are positive or negative, 
+# I need to get Tt (the fitted trend component)
+# from bfast ouput.
