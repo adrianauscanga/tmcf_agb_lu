@@ -71,7 +71,7 @@ for(i in names){
   freq <- ts_tsp[3]
   length_ts <- length(ts)
   ts_h <- (freq/length_ts)*1
-  bfastx <- bfast(ts, h = ts_h, season = "dummy", max.iter = 10, breaks = NULL, hpc = "none", level = 0.05, type = "OLS-MOSUM") 
+  bfastx <- bfast(ts, h = ts_h, season = "harmonic", max.iter = 10, breaks = NULL, hpc = "none", level = 0.05, type = "OLS-MOSUM") 
   assign(paste0("bfast_",i), bfastx)
   bfastlist <- c(bfastlist, paste0("bfast_",i)) #create a list of bfast files 
   bfastoutput <- bfastx$output #get output of bfast

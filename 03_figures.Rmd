@@ -1,0 +1,57 @@
+---
+title: "figures"
+author: "Adriana Uscanga"
+date: "4/21/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+# Cloud filters comparison
+
+```{r}
+cfc <- read_csv("input/RS/cloud_filter_comparison.csv")
+
+cfc %>%
+  ggplot(aes(x= `Breaks by hand`, y = `Breaks with filter`)) +
+  geom_point(color = "purple", position = "jitter", size= 1.5) +
+  geom_abline(intercept = 0, slope = 1, color = "black") +
+  #geom_smooth(method = "lm", color = "purple", se = F) +
+  labs(x = "Breaks by hand",
+       y = "Breaks with filter") 
+  
+cfc %>%
+  ggplot(aes(x = `Breaks before cleaning`, y = `Breaks with filter`)) +
+  geom_point(color = "orange", position = "jitter", size = 1.5) +
+  geom_abline(intercept = 0, slope = 1, color = "black") +
+  #geom_smooth(method = "lm", color = "orange", se = F) +
+  labs(x = "Breaks before cleaning",
+       y = "Breaks with filter") 
+  
+cfc %>%
+  ggplot(aes(x = `Breaks before cleaning`, y = `Breaks by hand`)) +
+  geom_point(color = "darkgreen", position = "jitter", size = 1.5) +
+  geom_abline(intercept = 0, slope = 1, color = "black") +
+  #geom_smooth(method = "lm", color = "darkgreen", se = F) +
+  labs(x = "Breaks before cleaning",
+       y = "Breaks by hand")
+
+cfc %>%
+  ggplot(aes(x = `Breaks before cleaning`)) +
+  geom_point(aes(y = `Breaks with filter`), color = "orange", position = "jitter", size = 1.5) +
+  geom_point(aes(y = `Breaks by hand`), color = "darkgreen", position = "jitter", size = 1.5) +
+  geom_abline(intercept = 0, slope = 1, color = "black") +
+  labs(x = "Breaks before cleaning",
+       y = "Breaks after cleaning")
+```
+
