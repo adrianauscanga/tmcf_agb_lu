@@ -13,6 +13,7 @@ library(lubridate)
 library(ggplot2)
 library(bfast)
 library(tseries)
+library(fs)
 
 # Make a loop to read all ts plots at once
 
@@ -56,6 +57,8 @@ sumbreaks <- NULL
 bfast_breaks <- NULL
 nobreaks <- NULL
 break_moments <- NULL
+magnitudes <- NULL
+mag_list <- NULL
 
 for(i in names){
   plotx <- mget(i) #search and "call" i(which is already in the environment)
@@ -75,6 +78,7 @@ for(i in names){
   lastiter <- tail(bfastoutput, n = 1) #get the last iteration 
   #breaks <- lastiter[[1]]$bp.Vt #get breakpoint info from last iteration
   breaks<- lastiter[[c(1,5)]]
+  magnitudes <- bfastx[["Mags"]]
   if(is.na(breaks)) {
     nobreaks <- c(nobreaks, paste0("bfast_",i),0)
   } else {
@@ -82,6 +86,7 @@ for(i in names){
     break_moments <- c(break_moments, paste0("bfast_",i,",",breaks2))
     totalbreaks <- length(breaks2) #calculate no. of breakpoints
     bfast_breaks <- c(bfast_breaks, paste0("bfast_",i), totalbreaks)
+    mag_list <- c(mag_list, paste0("bfast_",i,",",magnitudes[,3]))
   }
   
 }
@@ -119,7 +124,6 @@ f <- function(df, x){
 plotwblist <- break_moments$plot_id
 plotwblist <- unique(plotwblist)
 
-
 # Loop applying f function
 
 breakdates <- NULL
@@ -153,6 +157,14 @@ breakdates <- breakdates %>%
 break_moments <- cbind(break_moments, breakdates$break_dates)
 colnames(break_moments) <- c("plot_id", "ts_index", "break_dates")
 
-# To know which breaks are positive or negative, 
-# I need to get Tt (the fitted trend component)
-# from bfast ouput.
+# Extract break magnitudes:
+
+magnitudes_m <- matrix(mag_list, ncol=1, byrow = T)
+magnitudes_m <- as.data.frame(magnitudes_m)
+magnitudes_m <- separate(magnitudes_m, V1, into = c("plot_id", "magnitude"), sep = ",", remove = TRUE)
+
+# Bind datasets
+
+plots_breaks <- cbind(break_moments, magnitudes_m)
+plots_breaks <- plots_breaks[,c(-4)]
+
