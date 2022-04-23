@@ -165,6 +165,8 @@ magnitudes_m <- separate(magnitudes_m, V1, into = c("plot_id", "magnitude"), sep
 
 # Bind datasets
 
-plots_breaks <- cbind(break_moments, magnitudes_m)
-plots_breaks <- plots_breaks[,c(-4)]
+plots_breaks_harmonic <- cbind(break_moments, magnitudes_m)
+plots_breaks_harmonic <- plots_breaks_harmonic[,c(-4)]
 
+write.csv(plots_breaks_harmonic, file = "output/plots_breaks_harmonic.csv")
+write.csv(plots_breaks_dummy, file = "output/plots_breaks_dummy.csv")
