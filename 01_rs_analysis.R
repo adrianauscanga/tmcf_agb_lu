@@ -1,4 +1,4 @@
-#---------------------------- 01. BFAST analysis --------------------------
+#---------------------- 01. Remote Sensing Analisis ------------------------
 #
 # 
 #
@@ -32,6 +32,11 @@ for (i in ts_plots){
   assign(paste0("p",substr(i,17,23)),table) #assign name "p+plot_id" to table
   names<- c(names,paste0("p",substr(i,17,23))) #make a list of all plots
 }
+
+
+
+# 1. BFAST ----------------------------------------------------------------
+
 
 
 # Run bfast ---------------------------------------------------------------
@@ -71,7 +76,7 @@ for(i in names){
   freq <- ts_tsp[3]
   length_ts <- length(ts)
   ts_h <- (freq/length_ts)*1
-  bfastx <- bfast(ts, h = ts_h, season = "harmonic", max.iter = 10, breaks = NULL, hpc = "none", level = 0.05, type = "OLS-MOSUM") 
+  bfastx <- bfast(ts, h = ts_h, season = "dummy", max.iter = 10, breaks = NULL, hpc = "none", level = 0.05, type = "OLS-MOSUM") 
   assign(paste0("bfast_",i), bfastx)
   bfastlist <- c(bfastlist, paste0("bfast_",i)) #create a list of bfast files 
   bfastoutput <- bfastx$output #get output of bfast
@@ -165,8 +170,61 @@ magnitudes_m <- separate(magnitudes_m, V1, into = c("plot_id", "magnitude"), sep
 
 # Bind datasets
 
-plots_breaks_harmonic <- cbind(break_moments, magnitudes_m)
-plots_breaks_harmonic <- plots_breaks_harmonic[,c(-4)]
+plots_breaks_dummy <- cbind(break_moments, magnitudes_m)
+plots_breaks_dummy <- plots_breaks_dummy[,c(-4)]
 
-write.csv(plots_breaks_harmonic, file = "output/plots_breaks_harmonic.csv")
+#write.csv(plots_breaks_harmonic, file = "output/plots_breaks_harmonic.csv")
 write.csv(plots_breaks_dummy, file = "output/plots_breaks_dummy.csv")
+
+# should I make a relationship between ndvi/evi/ndwi and agb? It would have to be at the time of data collection and probably at site level
+# time to recovery to previous mean ndvi
+# min ndvi in time series
+# max ndvi in time series
+# mean ndvi
+# interannual and intrannual variation
+
+hist(p73770_3$ndvi)
+hist(p74189_4$ndvi)
+
+min(p73770_3$ndvi)
+min(p74189_4$ndvi)
+
+max(p73770_3$ndvi)
+max(p74189_4$ndvi)
+
+mean(p73770_3$ndvi)
+mean(p74189_4$ndvi)
+
+median(p73770_3$ndvi)
+median(p74189_4$ndvi)
+
+hist(p64174_1$ndvi)
+min(p64174_1$ndvi)
+mean(p64174_1$ndvi)
+median(p64174_1$ndvi)
+max(p64174_1$ndvi)
+
+hist(p64174_1$evi)
+min(p64174_1$evi)
+mean(p64174_1$evi)
+median(p64174_1$evi)
+max(p64174_1$evi)
+
+mean(p73770_3$evi)
+mean(p74189_4$evi)
+mean(p64174_1$evi)
+
+time_series %>%
+  filter(evi > 0 & evi < 7.5) %>%
+  ggplot(aes(x = evi)) +
+  geom_histogram()
+
+time_series %>%
+  ggplot(aes(x = ndvi)) +
+  geom_histogram()
+
+time_series %>%
+  ggplot(aes(x = ndwi)) +
+  geom_histogram()
+
+min(time_series$ndvi)

@@ -16,15 +16,18 @@ library(lubridate)
 library(fs)
 
 
-# REMOTE SENSING DATA -----------------------------------------------------
+#  .  ---------------------------------------------------------------------
 
 
-# Import Landsat 5 data ---------------------------------------------------
+# 1. REMOTE SENSING DATA -----------------------------------------------------
+
+
+# 1.1. Import Landsat 5 data ---------------------------------------------------
 
 
 # NDVI: 
 
-# NDVI --------------------------------------------------------------------
+# 1.1.1. NDVI --------------------------------------------------------------------
 
 
 ndvi_l5 <- read_csv("input/RS/ndvi_cfplots_all.csv", col_names = FALSE)
@@ -46,7 +49,7 @@ ndvi_l5 <- ndvi_l5 %>%
 
 # CI1:
 
-# CI1 ---------------------------------------------------------------------
+# 1.1.2. CI1 ---------------------------------------------------------------------
 
 
 ci1_l5 <- read_csv("input/RS/ci1_cfplots_all.csv", col_names = FALSE)
@@ -68,7 +71,7 @@ ci1_l5 <- ci1_l5 %>%
 
 # CI2:
 
-# CI2 ---------------------------------------------------------------------
+# 1.1.3. CI2 ---------------------------------------------------------------------
 
 
 ci2_l5 <- read_csv("input/RS/ci2_cfplots_all.csv", col_names = FALSE)
@@ -90,7 +93,7 @@ ci2_l5 <- ci2_l5 %>%
 
 # EVI:
 
-# EVI ---------------------------------------------------------------------
+# 1.1.4. EVI ---------------------------------------------------------------------
 
 
 evi_l5 <- read_csv("input/RS/evi_cfplots_all.csv", col_names = FALSE)
@@ -112,7 +115,7 @@ evi_l5 <- evi_l5 %>%
 
 # NDWI:
 
-# NDWI --------------------------------------------------------------------
+# 1.1.5. NDWI --------------------------------------------------------------------
 
 ndwi_l5 <- read_csv("input/RS/ndwi_cfplots_all.csv", col_names = FALSE)
 head(ndwi_l5)
@@ -132,7 +135,7 @@ ndwi_l5 <- ndwi_l5 %>%
   mutate(date = ymd(date))
 
 
-# RGB Bands ---------------------------------------------------------------------
+# 1.1.6. RGB Bands ---------------------------------------------------------------------
 
 rgb_l5 <- read_csv("input/RS/rgb_cfplots_all.csv", col_names = FALSE)
 head(rgb_l5)
@@ -154,7 +157,7 @@ rgb_l5 <- rgb_l5 %>%
   mutate(date = ymd(date))
 
 
-# IR Bands ----------------------------------------------------------------
+# 1.1.7. IR Bands ----------------------------------------------------------------
 
 ir_l5 <- read_csv("input/RS/ir_cfplots_all.csv", col_names = FALSE)
 head(ir_l5)
@@ -176,11 +179,17 @@ ir_l5 <- ir_l5 %>%
   separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
   mutate(date = ymd(date))
 
-# Import landsat 7 data ---------------------------------------------------
+# . -----------------------------------------------------------------------
+
+
+# 1.2. Import landsat 7 data ---------------------------------------------------
 
 # Repeat with landsat 7:
 
 # NDVI:
+
+# 1.2.1. NDVI -------------------------------------------------------------
+
 
 ndvi_l7 <- read_csv("input/RS/ndvil7_cfplots_all.csv", col_names = FALSE)
 head(ndvi_l7)
@@ -201,6 +210,9 @@ ndvi_l7 <- ndvi_l7 %>%
 
 # CI1:
 
+# 1.2.2. CI1 --------------------------------------------------------------
+
+
 ci1_l7 <- read_csv("input/RS/ci1l7_cfplots_all.csv", col_names = FALSE)
 
 ci1_l7 <- ci1_l7%>%
@@ -212,6 +224,9 @@ ci1_l7 <- ci1_l7%>%
             ci1 = as.numeric(X5))
 
 # CI2:
+
+# 1.2.3. CI2 --------------------------------------------------------------
+
 
 ci2_l7 <- read_csv("input/RS/ci2l7_cfplots_all.csv", col_names = FALSE)
 head(ci2_l7)
@@ -235,6 +250,9 @@ ci2_l7 <- ci2_l7 %>%
 
 # EVI:
 
+# 1.2.4. EVI --------------------------------------------------------------
+
+
 evi_l7 <- read_csv("input/RS/evil7_cfplots_all.csv", col_names = FALSE)
 head(evi_l7)
 
@@ -252,6 +270,9 @@ evi_l7 <- evi_l7 %>%
 
 # NDWI:
 
+# 1.2.5. NDWI -------------------------------------------------------------
+
+
 ndwi_l7 <- read_csv("input/RS/ndwil7_cfplots_all.csv", col_names = FALSE)
 head(ndwi_l7)
 
@@ -268,7 +289,7 @@ ndwi_l7 <- ndwi_l7 %>%
   mutate(date = ymd(date))
 
 
-# RGB Bands ---------------------------------------------------------------
+# 1.2.6. RGB Bands ---------------------------------------------------------------
 
 
 rgb_l7 <- read_csv("input/RS/rgb_cfplots_all_l7.csv", col_names = FALSE)
@@ -291,7 +312,7 @@ rgb_l7 <- rgb_l7 %>%
   mutate(date = ymd(date))
 
 
-# IR Bands ----------------------------------------------------------------
+# 1.2.7. IR Bands ----------------------------------------------------------------
 
 ir_l7 <- read_csv("input/RS/ir_cfplots_all_l7.csv", col_names = FALSE)
 head(ir_l7)
@@ -331,7 +352,11 @@ ir2_l7 <- ir2_l7 %>%
 
 # Add time series that have been filtered with cloud mask
 
-# Add ts that have been filtered with cloud mask --------------------------
+#  .  ---------------------------------------------------------------------
+
+
+
+# 1.3. Add ts that have been filtered with cloud mask --------------------------
 
 
 # Landsat 5
@@ -406,9 +431,16 @@ ndvinc_l7_ts_tbl <- ndvinc_l7_ts_tbl %>%
   filter(!is.na(ndvinc)) %>% # remove cloudy pixels
   select(-lon, -lat)
 
-# Bind datasets -----------------------------------------------------------
+
+#  .  ---------------------------------------------------------------------
+
+
+# 1.4. Bind datasets -----------------------------------------------------------
 # Bind all datasets.
 # First join ndvi, evi, ndwi, ndvinc, ci1 and ci1, then bind landsat 5 and landsat 7 data
+
+#  .  ---------------------------------------------------------------------
+
 
 
 l5 <- left_join(ndvinc_l5_ts_tbl, ndvi_l5, by = c("plot_id", "sat_time", "landsat", "row_path", "date"))
@@ -459,12 +491,15 @@ tail(time_series)
 time_series <- time_series %>%
    distinct(plot_id, date, .keep_all= TRUE) # From 84,698 to 75,945 
 
-# Remove cloudy pixels ----------------------------------------------------
+# 1.5. Remove cloudy pixels ----------------------------------------------------
+
+#  .  ---------------------------------------------------------------------
+
 
 time_series <- time_series %>%
   filter(ci1 > 2.8) # From 75,945 to 67,017
 
-# Export long dataset  ----------------------------------------------------
+# 1.6. Export long dataset  ----------------------------------------------------
 
 # as csv file and RData
 
@@ -482,7 +517,10 @@ lapply(names(time_series_plots), function(x){
   write_csv(time_series_plots[[x]], path = paste("output/ts_plots/", x, ".csv", sep = ""))
 })
 
-# FI DATA -----------------------------------------------------
+
+#  .  ---------------------------------------------------------------------
+
+# 2. FI DATA -----------------------------------------------------
 # 
 # load("input/FI/plots_cf4.RData")
 # head(plots_cf)
