@@ -24,6 +24,9 @@ library(fs)
 
 # NDVI: 
 
+# NDVI --------------------------------------------------------------------
+
+
 ndvi_l5 <- read_csv("input/RS/ndvi_cfplots_all.csv", col_names = FALSE)
 head(ndvi_l5)
 
@@ -42,6 +45,9 @@ ndvi_l5 <- ndvi_l5 %>%
   mutate(date = ymd(date))
 
 # CI1:
+
+# CI1 ---------------------------------------------------------------------
+
 
 ci1_l5 <- read_csv("input/RS/ci1_cfplots_all.csv", col_names = FALSE)
 head(ci1_l5)
@@ -62,6 +68,9 @@ ci1_l5 <- ci1_l5 %>%
 
 # CI2:
 
+# CI2 ---------------------------------------------------------------------
+
+
 ci2_l5 <- read_csv("input/RS/ci2_cfplots_all.csv", col_names = FALSE)
 head(ci2_l5)
 
@@ -80,6 +89,9 @@ ci2_l5 <- ci2_l5 %>%
   mutate(date = ymd(date))
 
 # EVI:
+
+# EVI ---------------------------------------------------------------------
+
 
 evi_l5 <- read_csv("input/RS/evi_cfplots_all.csv", col_names = FALSE)
 head(evi_l5)
@@ -100,6 +112,8 @@ evi_l5 <- evi_l5 %>%
 
 # NDWI:
 
+# NDWI --------------------------------------------------------------------
+
 ndwi_l5 <- read_csv("input/RS/ndwi_cfplots_all.csv", col_names = FALSE)
 head(ndwi_l5)
 
@@ -114,6 +128,51 @@ ndwi_l5 <- ndwi_l5%>%
 head(ndwi_l5)
 
 ndwi_l5 <- ndwi_l5 %>%
+  separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
+  mutate(date = ymd(date))
+
+
+# RGB Bands ---------------------------------------------------------------------
+
+rgb_l5 <- read_csv("input/RS/rgb_cfplots_all.csv", col_names = FALSE)
+head(rgb_l5)
+
+rgb_l5 <- rgb_l5%>%
+  transmute(plot_id = as.character(X8),
+            scene = as.character(X1),
+            lon = as.numeric(X2),
+            lat = as.numeric(X3),
+            sat_time = as.numeric(X4),
+            b1 = as.numeric(X5),
+            b2 = as.numeric(X6),
+            b3 = as.numeric(X7))
+
+head(rgb_l5)
+
+rgb_l5 <- rgb_l5 %>%
+  separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
+  mutate(date = ymd(date))
+
+
+# IR Bands ----------------------------------------------------------------
+
+ir_l5 <- read_csv("input/RS/ir_cfplots_all.csv", col_names = FALSE)
+head(ir_l5)
+
+ir_l5 <- ir_l5%>%
+  transmute(plot_id = as.character(X9),
+            scene = as.character(X1),
+            lon = as.numeric(X2),
+            lat = as.numeric(X3),
+            sat_time = as.numeric(X4),
+            b4 = as.numeric(X5),
+            b5 = as.numeric(X6),
+            b6 = as.numeric(X7),
+            b7 = as.numeric(X8))
+
+head(ir_l5)
+
+ir_l5 <- ir_l5 %>%
   separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
   mutate(date = ymd(date))
 
@@ -208,9 +267,71 @@ ndwi_l7 <- ndwi_l7 %>%
   separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
   mutate(date = ymd(date))
 
+
+# RGB Bands ---------------------------------------------------------------
+
+
+rgb_l7 <- read_csv("input/RS/rgb_cfplots_all_l7.csv", col_names = FALSE)
+head(rgb_l7)
+
+rgb_l7 <- rgb_l7%>%
+  transmute(plot_id = as.character(X8),
+            scene = as.character(X1),
+            lon = as.numeric(X2),
+            lat = as.numeric(X3),
+            sat_time = as.numeric(X4),
+            b1 = as.numeric(X5),
+            b2 = as.numeric(X6),
+            b3 = as.numeric(X7))
+
+head(rgb_l7)
+
+rgb_l7 <- rgb_l7 %>%
+  separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
+  mutate(date = ymd(date))
+
+
+# IR Bands ----------------------------------------------------------------
+
+ir_l7 <- read_csv("input/RS/ir_cfplots_all_l7.csv", col_names = FALSE)
+head(ir_l7)
+
+ir_l7 <- ir_l7%>%
+  transmute(plot_id = as.character(X7),
+            scene = as.character(X1),
+            lon = as.numeric(X2),
+            lat = as.numeric(X3),
+            sat_time = as.numeric(X4),
+            b4 = as.numeric(X5),
+            b5 = as.numeric(X6))
+
+head(ir_l7)
+
+ir2_l7 <- read_csv("input/RS/ir2_cfplots_all_l7.csv", col_names = FALSE)
+head(ir2_l7)
+
+ir2_l7 <- ir2_l7%>%
+  transmute(plot_id = as.character(X7),
+            scene = as.character(X1),
+            lon = as.numeric(X2),
+            lat = as.numeric(X3),
+            sat_time = as.numeric(X4),
+            b6 = as.numeric(X5),
+            b7 = as.numeric(X6))
+
+head(ir2_l7)
+
+ir_l7 <- ir_l7 %>%
+  separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
+  mutate(date = ymd(date))
+
+ir2_l7 <- ir2_l7 %>%
+  separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
+  mutate(date = ymd(date))
+
 # Add time series that have been filtered with cloud mask
 
-# Add ts that have been filters with cloud mask --------------------------
+# Add ts that have been filtered with cloud mask --------------------------
 
 
 # Landsat 5
@@ -249,6 +370,7 @@ ndvinc_l5_ts_tbl <- ndvinc_l5_ts_tbl %>%
   select(-lon, -lat)
 
 head(ndvinc_l5_ts_tbl)
+
 # Landsat 7
 
 ndvincl7_ts_files <- "input/RS/l7_noclouds/"  # file directory
@@ -296,7 +418,9 @@ l5 <- l5 %>%
   left_join(ci1_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(ci2_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(evi_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
-  left_join(ndwi_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) 
+  left_join(ndwi_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+  left_join(rgb_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+  left_join(ir_l5, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) 
 
 head(l5)
 
@@ -304,7 +428,10 @@ l7 <- left_join(ndvinc_l7_ts_tbl, ndvi_l7, by = c("plot_id", "landsat", "row_pat
   left_join(ci1_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(ci2_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(evi_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
-  left_join(ndwi_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) 
+  left_join(ndwi_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+  left_join(rgb_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+  left_join(ir_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
+  left_join(ir2_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) 
 
 head(l7)
 
@@ -330,12 +457,12 @@ tail(time_series)
 # Get rid of duplicated dates
 
 time_series <- time_series %>%
-   distinct(plot_id, date, .keep_all= TRUE) 
+   distinct(plot_id, date, .keep_all= TRUE) # From 84,698 to 75,945 
 
 # Remove cloudy pixels ----------------------------------------------------
 
 time_series <- time_series %>%
-  filter(ci1 > 2.8)
+  filter(ci1 > 2.8) # From 75,945 to 67,017
 
 # Export long dataset  ----------------------------------------------------
 
