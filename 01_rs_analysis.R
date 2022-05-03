@@ -461,6 +461,31 @@ save(plots_breaks_evi, file = "output/plots_breaks_evi.RData")
 
 head(plots_breaks_evi)
 
+
+# BFAST comparison --------------------------------------------------------
+
+load("output/plots_breaks_dummy.RData")
+load("output/plots_breaks_ndwi.RData")
+load("output/plots_breaks_evi.RData")
+
+ndvi_breaks <- plots_breaks_dummy %>%
+  group_by(plot_id) %>%
+  summarise(ndvi_breaks = n())
+
+ndwi_breaks <- plots_breaks_ndwi %>%
+  group_by(plot_id) %>%
+  summarise(ndwi_breaks = n())
+
+plots_breaks_evi <- plots_breaks_evi[,-4]
+
+evi_breaks <- plots_breaks_evi %>%
+  group_by(plot_id) %>%
+  summarise(evi_breaks = n())
+
+total_breaks <- full_join(ndvi_breaks, evi_breaks, by = "plot_id") %>%
+  full_join(ndwi_breaks, by = "plot_id")
+
+
 # Time Series: Summary Statistics -----------------------------------------
 
 # NDVI
@@ -523,3 +548,21 @@ time_series %>%
 ggplot(p72496_4, aes(x = date, y = ndwi)) +
   geom_point() +
   geom_line ()
+
+
+# VI in FI plots ----------------------------------------------------------
+
+
+average_vi <- time_series %>%
+  filter(date > "2008-12-31") %>%
+  filter(date < "2015-01-01") %>%
+  mutate(year = year(date)) %>% 
+  group_by(plot_id, year) %>%
+  summarize(mean_ndvi = mean(ndvi),
+            sd_ndvi = sd(ndvi),
+            mean_evi = mean(evi),
+            sd_evi = sd(evi),
+            mean_ndwi = mean(ndwi),
+            sd_ndwi = sd(ndwi))
+  
+
