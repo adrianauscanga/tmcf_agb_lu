@@ -456,6 +456,7 @@ l5 <- l5 %>%
 
 head(l5)
 
+
 l7 <- left_join(ndvinc_l7_ts_tbl, ndvi_l7, by = c("plot_id", "landsat", "row_path", "date", "sat_time")) %>%
   left_join(ci1_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
   left_join(ci2_l7, by = c("plot_id", "landsat", "row_path", "date", "lon", "lat", "sat_time")) %>%
@@ -514,7 +515,7 @@ time_series_plots <- split(time_series, time_series$plot_id)
 time_series_plots2 <- time_series_plots[-c(1:143)]
 
 lapply(names(time_series_plots), function(x){
-  write_csv(time_series_plots[[x]], path = paste("output/ts_plots/", x, ".csv", sep = ""))
+  write_csv(time_series_plots[[x]], path = paste("output/ts_plots/wclouds", x, ".csv", sep = ""))
 })
 
 

@@ -318,10 +318,148 @@ magnitudes_m <- separate(magnitudes_m, V1, into = c("plot_id", "magnitude"), sep
 plots_breaks_ndwi <- cbind(break_moments, magnitudes_m)
 plots_breaks_ndwi <- plots_breaks_ndwi[,c(-4)]
 
+
+
+# BFAST EVI ---------------------------------------------------------------
+
+
+# Loop for running bfast
+
+ts <- NULL
+evi <- NULL
+date <- NULL
+ts_list <- NULL
+ts_tsp <- NULL
+ts_h <- NULL
+freq <- NULL
+length_ts <- NULL
+bfastx <- NULL
+bfastlist <- NULL
+bfastoutput <- NULL
+lastiter <- NULL
+breaks <- NULL
+breaks2 <- NULL
+totalbreaks <- NULL
+sumbreaks <- NULL
+bfast_breaks <- NULL
+nobreaks <- NULL
+break_moments <- NULL
+magnitudes <- NULL
+mag_list <- NULL
+
+for(i in names){
+  plotx <- mget(i) #search and "call" i(which is already in the environment)
+  plotx <- data.frame(plotx)
+  evi <- plotx[,12]
+  date <- plotx[,6]
+  ts <- bfastts(evi, date, type = "irregular")
+  ts <- na.remove(ts)
+  ts_tsp <- attr(ts, "tsp")
+  freq <- ts_tsp[3]
+  length_ts <- length(ts)
+  ts_h <- (freq/length_ts)*1
+  bfastx <- bfast(ts, h = ts_h, season = "dummy", max.iter = 10, breaks = NULL, hpc = "none", level = 0.05, type = "OLS-MOSUM") 
+  assign(paste0("bfast_",i), bfastx)
+  bfastlist <- c(bfastlist, paste0("bfast_",i)) #create a list of bfast files 
+  bfastoutput <- bfastx$output #get output of bfast
+  lastiter <- tail(bfastoutput, n = 1) #get the last iteration 
+  #breaks <- lastiter[[1]]$bp.Vt #get breakpoint info from last iteration
+  breaks<- lastiter[[c(1,5)]]
+  magnitudes <- bfastx[["Mags"]]
+  if(is.na(breaks)) {
+    nobreaks <- c(nobreaks, paste0("bfast_",i),0)
+  } else {
+    breaks2 <- breaks$breakpoints #get only the breakpoints
+    break_moments <- c(break_moments, paste0("bfast_",i,",",breaks2))
+    totalbreaks <- length(breaks2) #calculate no. of breakpoints
+    bfast_breaks <- c(bfast_breaks, paste0("bfast_",i), totalbreaks)
+    mag_list <- c(mag_list, paste0("bfast_",i,",",magnitudes[,3]))
+  }
+  
+}
+
+
+# Extract relevant information from bfast ---------------------------------
+
+# No. of breaks per plot
+
+bfast_breaks <- c(bfast_breaks, nobreaks)
+breaksxplot <- matrix(bfast_breaks, ncol=2, byrow=T) #must have 300 rows
+
+# Dates of breaks
+
+break_moments <- matrix(break_moments, ncol=1, byrow = T)
+break_moments <- as.data.frame(break_moments)
+break_moments <- separate(break_moments, V1, into = c("plot_id", "ts_index"), sep = ",", remove = TRUE)
+
+# Clean table
+
+break_moments <- break_moments %>%
+  mutate(ts_index= as.numeric(ts_index)) %>%
+  separate(plot_id, into = c("bfast", "plot_id"), sep = "bfast_", remove = TRUE) %>%
+  select(-bfast)
+
+# Function and loop to extract break dates
+# Make a function that selects the row number equivalent to ts_index in each plot dataset
+
+f <- function(df, x){
+  df[x,6]
+}
+
+# Make a list of plots with breaks
+
+plotwblist <- break_moments$plot_id
+plotwblist <- unique(plotwblist)
+
+# Loop applying f function
+
+breakdates <- NULL
+
+for(i in 1:nrow(break_moments)){
+  plotid <- break_moments[i, "plot_id"]
+  index <- break_moments[i, "ts_index"]
+  for(j in plotwblist){
+    plotx <- mget(j)
+    plotx <- as.data.frame(plotx)
+    if(j == plotid){
+      breakdate <- f(plotx, index)
+      breakdates <- c(breakdates, paste(j, breakdate, sep = ", "))
+    }
+  }
+}
+
+# Great!
+
+# Edit breakdates data and combine it with break moments
+
+
+breakdates <- matrix(breakdates, ncol=1, byrow = T)
+breakdates <- as.data.frame(breakdates)
+breakdates <- separate(breakdates, V1, into = c("plot_id", "break_dates"), sep = ",", remove = TRUE)
+
+# Clean table
+breakdates <- breakdates %>%
+  mutate(break_dates = as.Date(break_dates))
+
+break_moments <- cbind(break_moments, breakdates$break_dates)
+colnames(break_moments) <- c("plot_id", "ts_index", "break_dates")
+
+# Extract break magnitudes:
+
+magnitudes_m <- matrix(mag_list, ncol=1, byrow = T)
+magnitudes_m <- as.data.frame(magnitudes_m)
+magnitudes_m <- separate(magnitudes_m, V1, into = c("plot_id", "magnitude"), sep = ",", remove = TRUE)
+
+# Bind datasets
+
+plots_breaks_evi <- cbind(break_moments, magnitudes_m)
+plots_breaks_evi <- plots_breaks_ndwi[,c(-4)]
+
 #write.csv(plots_breaks_harmonic, file = "output/plots_breaks_harmonic.csv")
 write.csv(plots_breaks_evi, file = "output/plots_breaks_evi.csv")
-save(plots_breaks_ndwi, file = "output/plots_breaks_evi.RData")
+save(plots_breaks_evi, file = "output/plots_breaks_evi.RData")
 
+head(plots_breaks_evi)
 
 # Time Series: Summary Statistics -----------------------------------------
 
