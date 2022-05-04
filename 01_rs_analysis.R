@@ -564,5 +564,48 @@ average_vi <- time_series %>%
             sd_evi = sd(evi),
             mean_ndwi = mean(ndwi),
             sd_ndwi = sd(ndwi))
+
+vi_plots <- average_vi %>%  group_by(plot_id) %>% summarise(plots = n())
+
+anti_join(vi_plots, plots_cf)
+
+average_vi <- average_vi %>%
+  filter(!plot_id %in% c("67883_2", "67883_3", "67883_4", "68398_3", "68398_4", "70076_1", "70306_3", "70306_4", "72284_1", "72284_2", "72284_3"))
+
+plots_cf_vi <- plots_cf %>%
+  inner_join(average_vi, by = c("plot_id", "year"))
+
+plots_cf_vi %>%
+  pivot_longer(cols = c("mean_ndvi", "mean_evi", "mean_ndwi"), names_to = "vi", values_to = "vi_annual_mean") %>%
+  ggplot(aes(x= tree_no, y = vi_annual_mean)) +
+  geom_point() +
+  facet_grid(vi ~ ., scales = "free")
+
+plots_cf_vi %>%
+  ggplot(aes(x = basal_area_ha, y = mean_ndvi)) +
+  geom_point()
+  geom_smooth(method = "lm")
   
+plots_cf_vi %>%
+  mutate(t_ndvi = (mean_ndvi)^2) %>%
+  group_by(site) %>%
+  summarize(no_plots = n(),
+            ndvi_site = mean(mean_ndvi),
+            evi_site = mean(mean_evi),
+            ndwi_site = mean(mean_ndwi),
+            t_ndvi_site = mean(t_ndvi),
+            agb_site = mean(agb_plot_ha),
+            tree_density_site = mean(tree_density),
+            tree_height_site = mean(loreys_height),
+            ba_site = mean(basal_area_ha)) %>%
+  filter(no_plots > 2) %>%
+  filter(evi_site > 0) %>%
+  #select(t_ndvi, mean_ndvi)
+  ggplot(aes(x= agb_site, y = ndvi_site)) +
+  geom_point() +
+  #scale_x_continuous(limits = c(0,200)) +
+  geom_smooth(method = "loess") +
+  scale_x_log10()
+
+
 
