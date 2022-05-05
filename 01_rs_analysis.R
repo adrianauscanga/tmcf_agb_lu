@@ -607,5 +607,15 @@ plots_cf_vi %>%
   geom_smooth(method = "loess") +
   scale_x_log10()
 
+ggplot(p72496_1, aes(x = sat_time, y = ndvi)) +
+  geom_line(color= "gray") +
+  geom_point() +
+  #geom_vline(xintercept = 1.545497e+12, color = "red") +
+  geom_vline(xintercept = 1.517849e+12, color = "purple") +
+  geom_vline(xintercept = 859133672899, color = "purple") +
+  geom_vline(xintercept = 1.422464e+12, color = "purple") +
+  geom_vline(xintercept = 1.241369e+12, color = "orange") 
+  #geom_hline(yintercept = 0.7554, color = "darkgray")
 
-
+mean(p72496_1$ndwi)
+median(p72496_1$ndvi)
