@@ -533,10 +533,121 @@ head(tpoints_ndvi_l5)
 tpoints_fc <- read_csv("input/RS/tpoints_fc.csv")
 head(tpoints_fc)
 
-tpoints_fc %>%
+tpoints_fc <- tpoints_fc %>%
   transmute(tp = as.character(`system:index`),
-            coords = as.character(.geo))
-  
+            coords = as.character(.geo)) %>%
+  separate(coords,into = c("pre", "lon", "lat"), sep = ",") %>%
+  select(-pre) %>%
+  separate(lon, into = c("pre", "lon"), sep = ":") %>%
+  select(-pre) %>%
+  mutate(lon = substring(lon, first= 2),
+         lat = substring(lat, first= 1, last = nchar(lat)-2)) %>%
+  mutate(lat = as.numeric(lat),
+         lon = as.numeric(lon)) %>%
+  mutate(tp = paste0("tp",tp))
+
+tpoints_fc <- tpoints_fc %>%
+  mutate(latitude = as.numeric(lat),
+         longitude = as.numeric(lon))
+
+head(tpoints_ndvi_l5)
+
+tps <- tpoints_ndvi_l5 %>%
+  mutate(coords = paste0(latitude,", ", longitude)) %>%
+  group_by(coords) %>%
+  summarize(tps_coords = unique(coords))
+
+tps$tp <- 1:nrow(tps)
+
+tps <- tps %>%
+  mutate(tp = paste0("tp_", tp))
+
+tpoints_ndvi_l5 <- tpoints_ndvi_l5 %>%
+  mutate(tps_coords = paste0(latitude,", ", longitude))
+head(tpoints_ndvi_l5)
+
+tpoints_ndvi_l5 <- left_join(tpoints_ndvi_l5, tps, by = "tps_coords")
+head(tpoints_ndvi_l5)
+
+tps_l7 <- tpoints_ndvi_l7 %>%
+  mutate(coords = paste0(latitude,", ", longitude)) %>%
+  group_by(coords) %>%
+  summarize(tps_coords = unique(coords))
+
+tps_l7$tp <- 1:nrow(tps_l7)
+
+tps_l7 <- tps_l7 %>%
+  mutate(tp = paste0("tp_", tp))
+
+tpoints_ndvi_l7 <- tpoints_ndvi_l7 %>%
+  mutate(tps_coords = paste0(latitude,", ", longitude)) %>%
+  left_join(tps_l7, by = "tps_coords")
+head(tpoints_ndvi_l5)
+
+tpoints_ndvi <- full_join(tpoints_ndvi_l5, tpoints_ndvi_l7)
+
+tpoints_ndvi %>%
+  group_by(tp) %>%
+  summarize(tps_total = unique(tps_coords)) #great!
+
+# Repeat with cloud index
+
+tpoints_ci1_l7 <- read_csv("input/RS/ci1_tpoints.csv", col_names = T)
+
+tpoints_ci1_l5 <- read_csv("input/RS/ci1_tpoints_l5.csv", col_names = T)
+
+tps_ci1_l7 <- tpoints_ci1_l7 %>%
+  mutate(coords = paste0(latitude,", ", longitude)) %>%
+  group_by(coords) %>%
+  summarize(tps_coords = unique(coords))
+
+tps_ci1_l7$tp <- 1:nrow(tps_ci1_l7)
+
+tps_ci1_l7 <- tps_ci1_l7 %>%
+  mutate(tp = paste0("tp_", tp))
+
+tpoints_ci1_l7 <- tpoints_ci1_l7 %>%
+  mutate(tps_coords = paste0(latitude,", ", longitude)) %>%
+  left_join(tps_ci1_l7, by = "tps_coords")
+head(tpoints_ci1_l7)
+
+tps_ci1_l5 <- tpoints_ci1_l5 %>%
+  mutate(coords = paste0(latitude,", ", longitude)) %>%
+  group_by(coords) %>%
+  summarize(tps_coords = unique(coords))
+
+tps_ci1_l5$tp <- 1:nrow(tps_ci1_l5)
+
+tps_ci1_l5 <- tps_ci1_l5 %>%
+  mutate(tp = paste0("tp_", tp))
+
+tpoints_ci1_l5 <- tpoints_ci1_l5 %>%
+  mutate(tps_coords = paste0(latitude,", ", longitude)) %>%
+  left_join(tps_ci1_l5, by = "tps_coords")
+head(tpoints_ci1_l5)
+
+tpoints_ci1 <- full_join(tpoints_ci1_l5, tpoints_ci1_l7)
+
+# Join datasets
+
+tpoints_time_series <- full_join(tpoints_ndvi, tpoints_ci1)
+head(tpoints_time_series)
+
+# Filter out clouds
+
+tpoints_time_series <- tpoints_time_series %>%
+  filter(!is.na(NDVI)) %>%
+  filter(CI1 > 2.8)
+
+# Filter dates
+
+tpoints_time_series <- tpoints_time_series %>% 
+  separate(id, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
+  mutate(date = ymd(date)) %>%
+  filter(date > "1992-12-31")
+
+save(tpoints_time_series, file = "output/tps_time_series.RData")
+
 #  .  ---------------------------------------------------------------------
 
 # 2. FI DATA -----------------------------------------------------
