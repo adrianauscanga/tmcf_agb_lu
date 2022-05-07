@@ -619,3 +619,20 @@ ggplot(p72496_1, aes(x = sat_time, y = ndvi)) +
 
 mean(p72496_1$ndwi)
 median(p72496_1$ndvi)
+
+ggplot(p68397_3, aes(x = sat_time, y = ndvi)) +
+  geom_line(color= "gray") +
+  geom_point() 
+  # geom_vline(xintercept = 1.548262e+12, color = "red") +
+  # geom_vline(xintercept = 1.466701e+12, color = "blue") +
+  # geom_vline(xintercept = 1.439658e+12, color = "blue") +
+  # geom_vline(xintercept = 1.306342e+12, color = "blue") +
+  # geom_vline(xintercept = 1.294505e+12, color = "red") +
+  # geom_vline(xintercept = 1.1211e+12, color = "blue") +
+  # geom_vline(xintercept = 9.93919e+11, color = "blue") +
+  # geom_vline(xintercept = 9.58667e+11, color = "blue") +
+  # geom_vline(xintercept = 933783944820, color = "blue") +
+  # geom_vline(xintercept = 899223943383, color = "blue") +
+  # geom_vline(xintercept = 868033436415, color = "blue") +
+  # geom_vline(xintercept = 837014507403, color = "blue") +
+  # geom_vline(xintercept = 792777541151, color = "red")

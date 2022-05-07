@@ -519,6 +519,24 @@ lapply(names(time_series_plots), function(x){
 })
 
 
+# . -------------------------------------------------------------------------
+
+
+# 1.7. Training data ------------------------------------------------------
+
+tpoints_ndvi_l7 <- read_csv("input/RS/ndvinc_tpoints.csv", col_names = T)
+head(tpoints_ndvi)
+
+tpoints_ndvi_l5 <- read_csv("input/RS/ndvi_tpoints_l5.csv", col_names = T)
+head(tpoints_ndvi_l5)
+
+tpoints_fc <- read_csv("input/RS/tpoints_fc.csv")
+head(tpoints_fc)
+
+tpoints_fc %>%
+  transmute(tp = as.character(`system:index`),
+            coords = as.character(.geo))
+  
 #  .  ---------------------------------------------------------------------
 
 # 2. FI DATA -----------------------------------------------------
