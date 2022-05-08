@@ -636,3 +636,163 @@ ggplot(p68397_3, aes(x = sat_time, y = ndvi)) +
   # geom_vline(xintercept = 868033436415, color = "blue") +
   # geom_vline(xintercept = 837014507403, color = "blue") +
   # geom_vline(xintercept = 792777541151, color = "red")
+
+
+
+# .................... ----------------------------------------------------
+
+
+# Training Points ---------------------------------------------------------
+
+# Make a for loop for reading each file csv file
+
+tps_dir <- dir_ls(path="output/ts_tps/")
+
+# First, create empty variables
+table <- NULL
+names <- NULL
+
+#loop for reading all plots:
+for (i in tps_dir){
+  #Read data
+  table <- read_csv(i, col_names = T) 
+  
+  assign(substring(i, first= 15, last = nchar(i)-4), table) #assign name "tp_#" to table
+  names<- c(names,substring(i, first= 15, last = nchar(i)-4)) #make a list of all plots
+}
+
+# Run BFAST
+
+# Loop for running bfast
+
+ts <- NULL
+ndvi <- NULL
+date <- NULL
+ts_list <- NULL
+ts_tsp <- NULL
+ts_h <- NULL
+freq <- NULL
+length_ts <- NULL
+bfastx <- NULL
+bfastlist <- NULL
+bfastoutput <- NULL
+lastiter <- NULL
+breaks <- NULL
+breaks2 <- NULL
+totalbreaks <- NULL
+sumbreaks <- NULL
+bfast_breaks <- NULL
+nobreaks <- NULL
+break_moments <- NULL
+magnitudes <- NULL
+mag_list <- NULL
+
+for(i in names){
+  plotx <- mget(i) #search and "call" i(which is already in the environment)
+  plotx <- data.frame(plotx)
+  ndvi <- plotx[,7]
+  date <- plotx[,3]
+  ts <- bfastts(ndvi, date, type = "irregular")
+  ts <- na.remove(ts)
+  ts_tsp <- attr(ts, "tsp")
+  freq <- ts_tsp[3]
+  length_ts <- length(ts)
+  ts_h <- (freq/length_ts)*1
+  bfastx <- bfast(ts, h = ts_h, season = "dummy", max.iter = 10, breaks = NULL, hpc = "none", level = 0.05, type = "OLS-MOSUM") 
+  assign(paste0("bfast_",i), bfastx)
+  bfastlist <- c(bfastlist, paste0("bfast_",i)) #create a list of bfast files 
+  bfastoutput <- bfastx$output #get output of bfast
+  lastiter <- tail(bfastoutput, n = 1) #get the last iteration 
+  #breaks <- lastiter[[1]]$bp.Vt #get breakpoint info from last iteration
+  breaks<- lastiter[[c(1,5)]]
+  magnitudes <- bfastx[["Mags"]]
+  if(is.na(breaks)) {
+    nobreaks <- c(nobreaks, paste0("bfast_",i),0)
+  } else {
+    breaks2 <- breaks$breakpoints #get only the breakpoints
+    break_moments <- c(break_moments, paste0("bfast_",i,",",breaks2))
+    totalbreaks <- length(breaks2) #calculate no. of breakpoints
+    bfast_breaks <- c(bfast_breaks, paste0("bfast_",i), totalbreaks)
+    mag_list <- c(mag_list, paste0("bfast_",i,",",magnitudes[,3]))
+  }
+  
+}
+
+# No. of breaks per plot
+
+bfast_breaks <- c(bfast_breaks, nobreaks)
+breaksxplot <- matrix(bfast_breaks, ncol=2, byrow=T) #must have 300 rows
+
+# Dates of breaks
+
+break_moments <- matrix(break_moments, ncol=1, byrow = T)
+break_moments <- as.data.frame(break_moments)
+break_moments <- separate(break_moments, V1, into = c("tp", "ts_index"), sep = ",", remove = TRUE)
+
+# Clean table
+
+break_moments <- break_moments %>%
+  mutate(ts_index= as.numeric(ts_index)) %>%
+  separate(tp, into = c("bfast", "tp"), sep = "bfast_", remove = TRUE) %>%
+  select(-bfast)
+
+# Function and loop to extract break dates
+# Make a function that selects the row number equivalent to ts_index in each plot dataset
+
+f <- function(df, x){
+  df[x,3]
+}
+
+# Make a list of plots with breaks
+
+tpwblist <- break_moments$tp
+tpwblist <- unique(tpwblist)
+
+# Loop applying f function
+
+breakdates <- NULL
+
+for(i in 1:nrow(break_moments)){
+  tp <- break_moments[i, "tp"]
+  index <- break_moments[i, "ts_index"]
+  for(j in tpwblist){
+    plotx <- mget(j)
+    plotx <- as.data.frame(plotx)
+    if(j == tp){
+      breakdate <- f(plotx, index)
+      breakdates <- c(breakdates, paste(j, breakdate, sep = ", "))
+    }
+  }
+}
+
+# Great!
+
+# Edit breakdates data and combine it with break moments
+
+
+breakdates <- matrix(breakdates, ncol=1, byrow = T)
+breakdates <- as.data.frame(breakdates)
+breakdates <- separate(breakdates, V1, into = c("tp", "break_dates"), sep = ",", remove = TRUE)
+
+# Clean table
+breakdates <- breakdates %>%
+  mutate(break_dates = as.Date(break_dates))
+
+break_moments <- cbind(break_moments, breakdates$break_dates)
+colnames(break_moments) <- c("tp", "ts_index", "break_dates")
+
+# Extract break magnitudes:
+
+magnitudes_m <- matrix(mag_list, ncol=1, byrow = T)
+magnitudes_m <- as.data.frame(magnitudes_m)
+magnitudes_m <- separate(magnitudes_m, V1, into = c("tp", "magnitude"), sep = ",", remove = TRUE)
+
+# Bind datasets
+
+tp_breaks <- cbind(break_moments, magnitudes_m)
+tp_breaks <- tp_breaks[,c(-4)]
+
+tp_breaks %>%
+  group_by(tp) %>%
+  summarize(tp_list = unique(tp))
+
