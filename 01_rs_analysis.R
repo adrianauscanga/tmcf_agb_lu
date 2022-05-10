@@ -796,3 +796,14 @@ tp_breaks %>%
   group_by(tp) %>%
   summarize(tp_list = unique(tp))
 
+save(tp_breaks, file = "output/tp_breaks.RData")
+
+# .................... --------------------------------------------------------------
+
+
+# Breaks validation -------------------------------------------------------
+
+# After validating breaks with training points and actual plots, I found a threshold of [1.5] (absolute value)
+# Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05
+
+
