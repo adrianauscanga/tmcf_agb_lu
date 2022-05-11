@@ -538,13 +538,6 @@ time_series %>%
   ggplot(aes(x = ndwi)) +
   geom_histogram()
 
-# should I make a relationship between ndvi/evi/ndwi and agb? It would have to be at the time of data collection and probably at site level
-# time to recovery to previous mean ndvi
-# min ndvi in time series
-# max ndvi in time series
-# mean ndvi
-# interannual and intrannual variation
-
 ggplot(p72496_4, aes(x = date, y = ndwi)) +
   geom_point() +
   geom_line ()
@@ -803,7 +796,165 @@ save(tp_breaks, file = "output/tp_breaks.RData")
 
 # Breaks validation -------------------------------------------------------
 
-# After validating breaks with training points and actual plots, I found a threshold of [1.5] (absolute value)
-# Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05
+# After validating breaks with training points and actual plots, I found a threshold of [0.15] (absolute value)
+# Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05, that's why 
+# it's important to to include positive breaks
+
+ts_breaks <- plots_breaks_dummy %>%
+  mutate(magnitude = as.numeric(magnitude)) %>%
+  filter(magnitude < -0.15 | magnitude > 0.15)
+
+# Compute number of breaks and extract date of last break per plot
+
+dc_year <- plots_cf %>%  # Year of data collection
+  select(plot_id, year) %>%
+  transmute(plot_id = as.character(plot_id),
+            dc_year = as.numeric(year))
+
+ts_breaks_plot <- ts_breaks %>%
+  arrange(break_dates) %>%
+  mutate(year = year(break_dates)) %>%
+  mutate(id = as.character(plot_id)) %>%
+  select(-plot_id) %>%
+  separate(id, into = c("p", "plot_id"), sep = "p") %>%
+  select(-p) %>%
+  left_join(dc_year, by = "plot_id") %>%
+  filter(year < dc_year) %>%
+  group_by(plot_id) %>%
+  summarize(number_breaks = n(),
+            last_break = last(break_dates),
+            magnitude = last(magnitude))
+
+# 75 plots have breaks, min number of breaks is 1, max is 9, mean value 2.066
+
+
+# Join dataset with plots_cf
+
+plots_cf_breaks <- ts_breaks_plot %>%
+  right_join(plots_cf, by = "plot_id")
+
+plots_cf_breaks <- plots_cf_breaks %>%
+  mutate(break_year = year(last_break)) %>%
+  mutate(age = year - break_year) %>%
+  mutate(number_breaks = ifelse(is.na(number_breaks), 0, number_breaks))
+
+# Filter out pixels acquired after data collection
+
+time_series_dc <- time_series %>%
+  mutate(year = year(date)) %>%
+  mutate(year = as.numeric(year)) %>%
+  left_join(dc_year, by = "plot_id") %>%
+  group_by(plot_id) %>%
+  filter(year < dc_year+1)
+
+
+# VI data -----------------------------------------------------------------
+
+# Max VI when data collection (vi_max_dc)
+# Min VI when data collection (vi_min_dc)
+# Average annual VI when data collection (and sd)
+
+# Max VI through time (vi_max_ts)
+# Min VI through time (vi_min_ts)
+# Average VI through time
+
+# Average VI before last break
+# Average VI after break
+# VI before break
+# VI after break
+# Time to reach VI level before break
+
+
+# should I make a relationship between ndvi/evi/ndwi and agb? It would have to be at the time of data collection and probably at site level
+
+# interannual and intrannual variation
+
+# VI when data collection:
+
+vi_dc <- time_series %>%
+  filter(date > "2008-12-31") %>%
+  filter(date < "2015-01-01") %>%
+  mutate(year = year(date)) %>% 
+  group_by(plot_id, year) %>%
+  summarize(ndvi_mean_dc = mean(ndvi),
+            ndvi_sd_dc = sd(ndvi),
+            ndvi_max_dc = max(ndvi),
+            ndvi_min_dc = min(ndvi),
+            evi_mean_dc = mean(evi),
+            evi_sd_dc = sd(evi),
+            evi_max_dc = max(evi),
+            evi_min_dc = min(evi),
+            ndwi_mean_dc = mean(ndwi),
+            ndwi_sd_dc = sd(ndwi),
+            ndwi_max_dc = max(ndwi),
+            ndwi_min_dc = min(ndwi))
+            
+# Not all plots are in both time series and plots_cf data sets
+vi_plots <- vi_dc %>%  group_by(plot_id) %>% summarise(plots = n())
+
+# These plots are in the time series data set but not in plots_cf (meaning we don't have structure info for them)
+anti_join(vi_plots, plots_cf)
+
+# Remove plots that are not in plots_cf:
+vi_dc <- vi_dc %>%
+  filter(!plot_id %in% c("67883_2", "67883_3", "67883_4", "68398_3", "68398_4", "70076_1", "70306_3", "70306_4", "72284_1", "72284_2", "72284_3"))
+
+# Join data sets:
+
+plots_cf_vi <- plots_cf %>%
+  inner_join(vi_dc, by = c("plot_id", "year"))
+
+# VI through time:
+
+vi_ts <- time_series_dc %>%
+  group_by(plot_id) %>%
+  summarize(ndvi_mean_ts = mean(ndvi),
+            ndvi_sd_ts = sd(ndvi),
+            ndvi_max_ts = max(ndvi),
+            ndvi_min_ts = min(ndvi),
+            evi_mean_ts = mean(evi),
+            evi_sd_ts = sd(evi),
+            evi_max_ts = max(evi),
+            evi_min_ts = min(evi),
+            ndwi_mean_ts = mean(ndwi),
+            ndwi_sd_ts = sd(ndwi),
+            ndwi_max_ts = max(ndwi),
+            ndwi_min_ts = min(ndwi))
+
+# Remove plots that are not in plots_cf:
+vi_ts <- vi_ts %>%
+  filter(!plot_id %in% c("67883_2", "67883_3", "67883_4", "68398_3", "68398_4", "70076_1", "70306_3", "70306_4", "72284_1", "72284_2", "72284_3"))
+
+# Join data sets:
+
+plots_cf_vi <- plots_cf_vi %>%
+  inner_join(vi_ts, by = c("plot_id"))
+
+# Join breaks and VI data:
+
+plots_cf_rs <- inner_join(plots_cf_breaks, plots_cf_vi) #plots_cf with remote sensing data
+
+plots_cf_rs <- plots_cf_rs %>%
+  mutate(age = ifelse(is.na(age), year-1993, age))
+  
+# Test relationships at site level
+
+sites_rs <- plots_cf_rs %>%
+  group_by(site) %>%
+  summarize(total_breaks = sum(number_breaks),
+            breaks = ifelse(total_breaks == 0, 'no break', 'break'),
+            mean_breaks = mean(number_breaks),
+            mean_age = mean(age),
+            ndvi_ts = mean(ndvi_mean_ts),
+            sd_ndvi_ts = sd(ndvi_mean_ts),
+            evi_ts = mean(evi_mean_ts),
+            sd_evi_ts = sd(evi_mean_ts),
+            ndwi_ts = mean(ndwi_mean_ts),
+            sd_ndwi_ts = sd(ndwi_mean_ts))
+
+sites_cf_rs <- inner_join(sites_cf, sites_rs)
+
+# Explore relationships with sd, why are so many pixels with no breaks but very few trees?
+
 
 
