@@ -14,6 +14,7 @@ library(ggplot2)
 library(bfast)
 library(tseries)
 library(fs)
+library(ggpubr)
 
 # Load individual plots
 # Make a loop to read all ts plots at once
@@ -801,7 +802,7 @@ save(tp_breaks, file = "output/tp_breaks.RData")
 # Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05, that's why 
 # it's important to to include positive breaks
 
-load("~/OregonPhD/Tesis/chapter2/tmcf_agb_lu/output/plots_breaks_dummy.RData")
+load("output/plots_breaks_dummy.RData")
 
 ts_breaks <- plots_breaks_dummy %>%
   mutate(magnitude = as.numeric(magnitude)) %>%
@@ -822,13 +823,13 @@ ts_breaks_plot <- ts_breaks %>%
   separate(id, into = c("p", "plot_id"), sep = "p") %>%
   select(-p) %>%
   left_join(dc_year, by = "plot_id") %>%
-  filter(year < dc_year) %>%
+  filter(year < dc_year+1) %>%
   group_by(plot_id) %>%
   summarize(number_breaks = n(),
             last_break = last(break_dates),
             magnitude = last(magnitude))
 
-# 75 plots have breaks, min number of breaks is 1, max is 9, mean value 2.066
+# 76 plots have breaks, min number of breaks is 1, max is 9, mean value 2.066
 
 
 # Join dataset with plots_cf
@@ -885,14 +886,17 @@ vi_dc <- time_series %>%
   mutate(year = year(date)) %>% 
   group_by(plot_id, year) %>%
   summarize(ndvi_mean_dc = mean(ndvi),
+            ndvi_median_dc = median(ndvi),
             ndvi_sd_dc = sd(ndvi),
             ndvi_max_dc = max(ndvi),
             ndvi_min_dc = min(ndvi),
             evi_mean_dc = mean(evi),
+            evi_median_dc = median(evi),
             evi_sd_dc = sd(evi),
             evi_max_dc = max(evi),
             evi_min_dc = min(evi),
             ndwi_mean_dc = mean(ndwi),
+            ndwi_median_dc = median(ndwi),
             ndwi_sd_dc = sd(ndwi),
             ndwi_max_dc = max(ndwi),
             ndwi_min_dc = min(ndwi))
@@ -917,20 +921,57 @@ plots_cf_vi <- plots_cf %>%
 vi_ts <- time_series_dc %>%
   group_by(plot_id) %>%
   summarize(ndvi_mean_ts = mean(ndvi),
+            ndvi_median_ts = median(ndvi),
             ndvi_sd_ts = sd(ndvi),
             ndvi_max_ts = max(ndvi),
             ndvi_min_ts = min(ndvi),
             ndvi_cv_ts = sd(ndvi)/mean(ndvi) *100,
             evi_mean_ts = mean(evi),
+            evi_median_ts = median(evi),
             evi_sd_ts = sd(evi),
             evi_max_ts = max(evi),
             evi_min_ts = min(evi),
-            evi_cv_ts = sd(evi)/mean(ndvi) *100,
+            evi_cv_ts = sd(evi)/mean(evi) *100,
             ndwi_mean_ts = mean(ndwi),
+            ndwi_median_ts = median(ndwi),
             ndwi_sd_ts = sd(ndwi),
             ndwi_max_ts = max(ndwi),
             ndwi_min_ts = min(ndwi),
-            ndwi_cv_ts = sd(ndwi)/mean(ndvi) *100)
+            ndwi_cv_ts = sd(ndwi)/mean(ndwi) *100,
+            savi_mean_ts = mean(savi),
+            savi_median_ts = median(savi),
+            savi_sd_ts = sd(savi),
+            savi_max_ts = max(savi),
+            savi_min_ts = min(savi),
+            savi_cv_ts = sd(savi)/mean(savi) *100)
+
+vi_annual_ts <- time_series_dc %>%
+  group_by(plot_id, year) %>%
+  summarize(ndvi_annual_min = min(ndvi),
+            evi_annual_min = min(evi),
+            ndwi_annual_min = min(ndwi),
+            savi_annual_min = min(savi),
+            ndvi_annual_max = max(ndvi),
+            evi_annual_max = max(evi),
+            ndwi_annual_max = max(ndwi),
+            savi_annual_max = max(savi),
+            ndvi_annual_sd = sd(ndvi),
+            evi_annual_sd = sd(evi),
+            ndwi_annual_sd = sd(ndwi),
+            savi_annual_sd = sd(savi)) %>%
+  group_by(plot_id) %>%
+  summarize(ndvi_annual_min = mean(ndvi_annual_min),
+            evi_annual_min = mean(evi_annual_min),
+            ndwi_annual_min = mean(ndwi_annual_min),
+            savi_annual_min = mean(savi_annual_min),
+            ndvi_annual_max = mean(ndvi_annual_max),
+            evi_annual_max = mean(evi_annual_max),
+            ndwi_annual_max = mean(ndwi_annual_max),
+            savi_annual_max = mean(savi_annual_max),
+            ndvi_annual_sd = mean(ndvi_annual_sd),
+            evi_annual_sd = mean(evi_annual_sd),
+            ndwi_annual_sd = mean(ndwi_annual_sd),
+            savi_annual_sd = mean(savi_annual_sd))
 
 # Remove plots that are not in plots_cf:
 vi_ts <- vi_ts %>%
@@ -939,7 +980,8 @@ vi_ts <- vi_ts %>%
 # Join data sets:
 
 plots_cf_vi <- plots_cf_vi %>%
-  inner_join(vi_ts, by = c("plot_id"))
+  inner_join(vi_ts, by = "plot_id") %>%
+  inner_join(vi_annual_ts, by = "plot_id")
 
 # Join breaks and VI data:
 
@@ -957,11 +999,11 @@ sites_breaks <- plots_cf_rs %>%
             mean_breaks = mean(number_breaks),
             mean_age = mean(age),
             ndvi_mean_dc = mean(ndvi_mean_dc),
-            ndvi_sd_dc = sd(ndvi_mean_dc),
+            ndvi_sd_dc = mean(ndvi_sd_dc),
             evi_mean_dc = mean(evi_mean_dc),
-            evi_sd_dc = sd(evi_mean_dc),
+            evi_sd_dc = mean(evi_sd_dc),
             ndwi_mean_dc = mean(ndwi_mean_dc),
-            ndwi_sd_dc = sd(ndwi_mean_dc))
+            ndwi_sd_dc = mean(ndwi_sd_dc))
 
 # Summarize VI data by site:
 
@@ -969,20 +1011,23 @@ sites_vi <- time_series_dc %>%
   separate(plot_id, into = c("site", "plot"), sep = "_") %>%
   group_by(site) %>%
   summarize(ndvi_mean_ts = mean(ndvi),
+            ndvi_median_ts = median(ndvi),
             ndvi_sd_ts = sd(ndvi),
             ndvi_max_ts = max(ndvi),
             ndvi_min_ts = min(ndvi),
-            ndvi_cf_ts = sd(ndvi)/mean(ndvi) *100,
+            ndvi_cv_ts = sd(ndvi)/mean(ndvi) *100,
             evi_mean_ts = mean(evi),
+            evi_median_ts = median(evi),
             evi_sd_ts = sd(evi),
             evi_max_ts = max(evi),
             evi_min_ts = min(evi),
-            evi_cf_ts = sd(evi)/mean(ndvi) *100,
+            evi_cv_ts = sd(evi)/mean(ndvi) *100,
             ndwi_mean_ts = mean(ndwi),
+            ndwi_median_ts = median(ndwi),
             ndwi_sd_ts = sd(ndwi),
             ndwi_max_ts = max(ndwi),
             ndwi_min_ts = min(ndwi),
-            ndwi_cf_ts = sd(ndwi)/mean(ndvi) *100)
+            ndwi_cv_ts = sd(ndwi)/mean(ndvi) *100)
 
 sites_cf_rs <- inner_join(sites_cf, sites_breaks) %>%
   inner_join(sites_vi)
@@ -990,15 +1035,39 @@ sites_cf_rs <- inner_join(sites_cf, sites_breaks) %>%
 # Explore relationships with sd, why are so many pixels with no breaks but very few trees?
 
 sites_cf_rs %>%
+  #filter(av_agb_site < 500) %>%
   filter(plot_no >2) %>%
   #filter(is_break == "break") %>%
   #select(landscape, total_breaks, mean_breaks, mean_age, is_break, av_agb_site, av_treeheight_site, av_treedensity_site, av_basalarea_site, ndvi_mean_ts, ndvi_cf_ts, ndwi_mean_ts, ndwi_cf_ts, evi_mean_ts, evi_cf_ts) %>%
   mutate(age_class = ifelse(mean_age < 15, "<15", ">15")) %>%
   mutate(breaks_class = ifelse(mean_breaks == 0, "0",
                                ifelse(mean_breaks > 0 & mean_breaks < 1.1, "1", "2"))) %>%
-  ggplot(aes(y = av_agb_site, x = is_break))+
+  ggplot(aes(y = av_agb_site, x = age_class))+
   geom_boxplot() +
-  geom_point()
+  geom_point(aes(color = is_break))
+
+# aov_data <- sites_cf_rs %>%
+#   filter(plot_no >2) %>%
+#   mutate(agb_class = ifelse(av_agb_site < 100, "low", "high")) %>%
+#   mutate(age_class = ifelse(mean_age < 15, "<15", ">15")) %>%
+#   mutate(weird = ifelse(av_agb_site < 100 & mean_age > 15 & is_break == "no break", "weird", "normal"))
+# 
+# 
+# summary(aov(ndvi_cv_ts ~ weird * is_break, data = aov_data))
+# 
+# sites_cf_rs %>%
+#   filter(plot_no >2) %>%
+#   mutate(agb_class = ifelse(av_agb_site < 100, "low", "high")) %>%
+#   mutate(age_class = ifelse(mean_age < 15, "<15", ">15")) %>%
+#   mutate(weird = ifelse(av_agb_site < 100 & mean_age > 15 & is_break == "no break", "weird", "normal")) %>%
+#   group_by(age_class, is_break, weird) %>%
+#   summarize(counts = n(),
+#             vi = mean(ndvi_mean_ts)) # ANOVAS ?
+
+# Calculate SAVI *CHECK
+# Calculate average of the lowest and highest vi value per year *CHECK
+# PCA with rs values and AGB and structure?
+
 
 # Filter sites with low agb (agb < 100) and mean_age > 15
 
@@ -1050,3 +1119,14 @@ sites_cf_rs %>%
   scale_y_log10() +
   #scale_x_log10() +
   geom_smooth(method = "lm")
+
+
+# Individual plot visualization -------------------------------------------
+
+p64443_2 %>%
+  ggplot(aes(x= sat_time, y = ndvi)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(limits = c(0,1))
+
+
