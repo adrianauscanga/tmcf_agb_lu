@@ -41,6 +41,7 @@ load("output/time_series.RData")
 # Load FI plots
 
 load("input/FI/plots_cf4.RData")
+load("input/FI/sites_cf4.RData")
 
 # 1. BFAST NDVI ----------------------------------------------------------------
 
@@ -800,6 +801,8 @@ save(tp_breaks, file = "output/tp_breaks.RData")
 # Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05, that's why 
 # it's important to to include positive breaks
 
+load("~/OregonPhD/Tesis/chapter2/tmcf_agb_lu/output/plots_breaks_dummy.RData")
+
 ts_breaks <- plots_breaks_dummy %>%
   mutate(magnitude = as.numeric(magnitude)) %>%
   filter(magnitude < -0.15 | magnitude > 0.15)
@@ -871,6 +874,11 @@ time_series_dc <- time_series %>%
 
 # VI when data collection:
 
+time_series_dc %>%
+  filter(evi < 10 & evi > 0) %>%
+  ggplot(aes(y = ndvi, x = evi)) +
+  geom_point()
+
 vi_dc <- time_series %>%
   filter(date > "2008-12-31") %>%
   filter(date < "2015-01-01") %>%
@@ -912,14 +920,17 @@ vi_ts <- time_series_dc %>%
             ndvi_sd_ts = sd(ndvi),
             ndvi_max_ts = max(ndvi),
             ndvi_min_ts = min(ndvi),
+            ndvi_cv_ts = sd(ndvi)/mean(ndvi) *100,
             evi_mean_ts = mean(evi),
             evi_sd_ts = sd(evi),
             evi_max_ts = max(evi),
             evi_min_ts = min(evi),
+            evi_cv_ts = sd(evi)/mean(ndvi) *100,
             ndwi_mean_ts = mean(ndwi),
             ndwi_sd_ts = sd(ndwi),
             ndwi_max_ts = max(ndwi),
-            ndwi_min_ts = min(ndwi))
+            ndwi_min_ts = min(ndwi),
+            ndwi_cv_ts = sd(ndwi)/mean(ndvi) *100)
 
 # Remove plots that are not in plots_cf:
 vi_ts <- vi_ts %>%
@@ -937,24 +948,105 @@ plots_cf_rs <- inner_join(plots_cf_breaks, plots_cf_vi) #plots_cf with remote se
 plots_cf_rs <- plots_cf_rs %>%
   mutate(age = ifelse(is.na(age), year-1993, age))
   
-# Test relationships at site level
+# Summarize break info by site:
 
-sites_rs <- plots_cf_rs %>%
+sites_breaks <- plots_cf_rs %>%
   group_by(site) %>%
   summarize(total_breaks = sum(number_breaks),
-            breaks = ifelse(total_breaks == 0, 'no break', 'break'),
+            is_break = ifelse(total_breaks == 0, 'no break', 'break'),
             mean_breaks = mean(number_breaks),
             mean_age = mean(age),
-            ndvi_ts = mean(ndvi_mean_ts),
-            sd_ndvi_ts = sd(ndvi_mean_ts),
-            evi_ts = mean(evi_mean_ts),
-            sd_evi_ts = sd(evi_mean_ts),
-            ndwi_ts = mean(ndwi_mean_ts),
-            sd_ndwi_ts = sd(ndwi_mean_ts))
+            ndvi_mean_dc = mean(ndvi_mean_dc),
+            ndvi_sd_dc = sd(ndvi_mean_dc),
+            evi_mean_dc = mean(evi_mean_dc),
+            evi_sd_dc = sd(evi_mean_dc),
+            ndwi_mean_dc = mean(ndwi_mean_dc),
+            ndwi_sd_dc = sd(ndwi_mean_dc))
 
-sites_cf_rs <- inner_join(sites_cf, sites_rs)
+# Summarize VI data by site:
+
+sites_vi <- time_series_dc %>%
+  separate(plot_id, into = c("site", "plot"), sep = "_") %>%
+  group_by(site) %>%
+  summarize(ndvi_mean_ts = mean(ndvi),
+            ndvi_sd_ts = sd(ndvi),
+            ndvi_max_ts = max(ndvi),
+            ndvi_min_ts = min(ndvi),
+            ndvi_cf_ts = sd(ndvi)/mean(ndvi) *100,
+            evi_mean_ts = mean(evi),
+            evi_sd_ts = sd(evi),
+            evi_max_ts = max(evi),
+            evi_min_ts = min(evi),
+            evi_cf_ts = sd(evi)/mean(ndvi) *100,
+            ndwi_mean_ts = mean(ndwi),
+            ndwi_sd_ts = sd(ndwi),
+            ndwi_max_ts = max(ndwi),
+            ndwi_min_ts = min(ndwi),
+            ndwi_cf_ts = sd(ndwi)/mean(ndvi) *100)
+
+sites_cf_rs <- inner_join(sites_cf, sites_breaks) %>%
+  inner_join(sites_vi)
 
 # Explore relationships with sd, why are so many pixels with no breaks but very few trees?
 
+sites_cf_rs %>%
+  filter(plot_no >2) %>%
+  #filter(is_break == "break") %>%
+  #select(landscape, total_breaks, mean_breaks, mean_age, is_break, av_agb_site, av_treeheight_site, av_treedensity_site, av_basalarea_site, ndvi_mean_ts, ndvi_cf_ts, ndwi_mean_ts, ndwi_cf_ts, evi_mean_ts, evi_cf_ts) %>%
+  mutate(age_class = ifelse(mean_age < 15, "<15", ">15")) %>%
+  mutate(breaks_class = ifelse(mean_breaks == 0, "0",
+                               ifelse(mean_breaks > 0 & mean_breaks < 1.1, "1", "2"))) %>%
+  ggplot(aes(y = av_agb_site, x = is_break))+
+  geom_boxplot() +
+  geom_point()
+
+# Filter sites with low agb (agb < 100) and mean_age > 15
+
+weird <- sites_cf_rs %>%
+  filter(av_agb_site < 100,
+         mean_age > 15)
+
+weird %>%
+  group_by(is_break) %>%
+  summarize(breaks_total = n())
 
 
+sites_cf_rs %>%
+  #filter(is_break == "break",
+  #        plot_no > 2) %>%
+  ggplot(aes(y = av_agb_site, x = mean_age)) +
+  geom_point() +
+  scale_y_log10() +
+  geom_smooth(method = "lm")
+
+plots_cf_rs %>%
+  mutate(no_breaks_class = ifelse(number_breaks == 0, "none",
+                                  ifelse(number_breaks == 1, "one", "several"))) %>%
+  ggplot(aes(y = agb_plot_ha, x = age)) +
+  geom_point(aes(color = no_breaks_class), size = 2) +
+  scale_y_log10() +
+  #scale_color_gradient(low = "forestgreen", high =  "lightgoldenrod2")
+  scale_color_brewer(type = "qual")
+
+weirdplots <- plots_cf_rs %>%
+  filter(age > 15,
+         agb_plot_ha < 100,
+         str_class_plots == 1,
+         number_breaks == 0)
+
+summary(lm(sites_cf_rs$av_agb_site ~ sites_cf_rs$ndvi_mean_ts))
+
+sites_cf_rs %>%
+  mutate(age_fixed = ifelse(is_break == "no break", 20, mean_age)) %>%
+  ggplot(aes(y = av_agb_site, x = age_fixed)) +
+  geom_point() +
+  scale_y_log10() +
+  geom_smooth(method = "lm")
+
+sites_cf_rs %>%
+  mutate(age_fixed = ifelse(is_break == "no break", 20, mean_age)) %>%
+  ggplot(aes(y = av_agb_site, x = age_fixed)) +
+  geom_point(aes(color= mean_breaks)) +
+  scale_y_log10() +
+  #scale_x_log10() +
+  geom_smooth(method = "lm")
