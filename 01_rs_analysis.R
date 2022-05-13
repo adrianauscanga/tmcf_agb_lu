@@ -1081,12 +1081,34 @@ weird %>%
 
 
 sites_cf_rs %>%
-  #filter(is_break == "break",
-  #        plot_no > 2) %>%
+  filter(plot_no > 2,
+         is_break == "break") %>%
   ggplot(aes(y = av_agb_site, x = mean_age)) +
-  geom_point() +
+  geom_point(aes(color = landscape, shape = is_break))  +
   scale_y_log10() +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm", span = 1)
+
+plots_cf_rs %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 20, age)) %>%
+  mutate(no_breaks_class = ifelse(number_breaks == 0, "0",
+                                  ifelse(number_breaks == 1, "1",
+                                         ifelse(number_breaks == 2, "2", ">2")))) %>%
+  ggplot(aes(y = agb_plot, x = age_fixed)) +
+  geom_jitter(aes(color= as.factor(no_breaks_class))) +
+  geom_smooth(method = "lm", span = 1) +
+  scale_y_log10() +
+  scale_color_brewer(type = "qual")
+
+plots_cf_rs %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 20, age)) %>%
+  mutate(no_breaks_class = ifelse(number_breaks == 0, "a",
+                                  ifelse(number_breaks == 1, "b",
+                                         ifelse(number_breaks == 2, "c", "d")))) %>%
+  ggplot(aes(y = agb_plot_ha, x = no_breaks_class)) +
+  geom_boxplot() +
+  stat_compare_means(comparisons = list(c("a", "b"), c("a", "c"), c("a", "d"), c("b", "c"), c("b", "d"), c("c", "d")),
+                     label = "p.signif")
+
 
 plots_cf_rs %>%
   mutate(no_breaks_class = ifelse(number_breaks == 0, "none",
@@ -1095,7 +1117,8 @@ plots_cf_rs %>%
   geom_point(aes(color = no_breaks_class), size = 2) +
   scale_y_log10() +
   #scale_color_gradient(low = "forestgreen", high =  "lightgoldenrod2")
-  scale_color_brewer(type = "qual")
+  scale_color_brewer(type = "qual") +
+  geom_smooth(method = "lm", color = "black", alpha = 0.3)
 
 weirdplots <- plots_cf_rs %>%
   filter(age > 15,
@@ -1120,6 +1143,49 @@ sites_cf_rs %>%
   #scale_x_log10() +
   geom_smooth(method = "lm")
 
+
+
+# Comparison of RS data ---------------------------------------------------
+
+rs <- plots_cf_rs[,c(2,25,26,28,32,40:91)]
+
+rs_corr <- rs %>%
+  scale() %>%
+  na.omit() %>%
+  cor()
+
+rs_corr_cov <- rs_corr %>%
+  as_tibble(rownames = "cov1") %>%
+  pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
+  mutate(abs_value = abs(value)) %>%
+  filter(abs_value > 0.6) %>% #play around with this value to get more (or less) variables
+  filter(!abs_value == 1) %>%
+  filter(cov1 == "number_breaks" |
+           cov1 == "age" |
+           cov1 == "tree_density" |
+           cov1 == "loreys_height" |
+           cov1 == "basal_area_ha" |
+           cov1 == "agb_plot_ha") %>%
+  filter(!cov2 == "tree_density" &
+          !cov2 == "loreys_height" &
+          !cov2 == "basal_area_ha" &
+          !cov2 == "agb_plot_ha") %>%
+  pull(cov2) %>%
+  unique()
+
+rs_long %>%
+  group_by(covariate) %>%
+  summarize(corr = cor()) %>%
+  filter(abs(corr) > 0.3)
+
+
+corr <- cor(scale(rs))
+
+abs(corr)
+
+corr %>%
+  abs() %>%
+  filter(number_breaks )
 
 # Individual plot visualization -------------------------------------------
 
