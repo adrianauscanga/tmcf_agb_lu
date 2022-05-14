@@ -1147,9 +1147,9 @@ sites_cf_rs %>%
 
 # Comparison of RS data ---------------------------------------------------
 
-rs <- plots_cf_rs[,c(2,25,26,28,32,40:91)]
+rs <- plots_cf_rs[,c(1,2,25,26,28,32,40:91)]
 
-rs_corr <- rs %>%
+rs_corr <- rs[,-1] %>%
   scale() %>%
   na.omit() %>%
   cor()
@@ -1158,11 +1158,9 @@ rs_corr_cov <- rs_corr %>%
   as_tibble(rownames = "cov1") %>%
   pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
   mutate(abs_value = abs(value)) %>%
-  filter(abs_value > 0.6) %>% #play around with this value to get more (or less) variables
+  filter(abs_value > 0.3) %>% #play around with this value to get more (or less) variables
   filter(!abs_value == 1) %>%
-  filter(cov1 == "number_breaks" |
-           cov1 == "age" |
-           cov1 == "tree_density" |
+  filter(cov1 == "tree_density" |
            cov1 == "loreys_height" |
            cov1 == "basal_area_ha" |
            cov1 == "agb_plot_ha") %>%
@@ -1170,29 +1168,119 @@ rs_corr_cov <- rs_corr %>%
           !cov2 == "loreys_height" &
           !cov2 == "basal_area_ha" &
           !cov2 == "agb_plot_ha") %>%
+  filter(!grepl('savi', cov2)) %>%
   pull(cov2) %>%
   unique()
 
-rs_long %>%
-  group_by(covariate) %>%
-  summarize(corr = cor()) %>%
-  filter(abs(corr) > 0.3)
+rs_corr_matrix <- rs_corr %>%
+  as_tibble(rownames = "cov1") %>%
+  pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
+  mutate(abs_value = abs(value)) %>%
+  filter(abs_value > 0.3) %>% #play around with this value to get more (or less) variables
+  filter(!abs_value == 1) %>%
+  filter(cov1 == "tree_density" |
+           cov1 == "loreys_height" |
+           cov1 == "basal_area_ha" |
+           cov1 == "agb_plot_ha") %>%
+  filter(!cov2 == "tree_density" &
+           !cov2 == "loreys_height" &
+           !cov2 == "basal_area_ha" &
+           !cov2 == "agb_plot_ha") %>%
+  filter(!grepl('savi', cov2))
 
 
-corr <- cor(scale(rs))
+rs_short <- rs %>%
+  select(plot_id,
+         tree_density,
+         loreys_height,
+         basal_area_ha,
+         agb_plot_ha,
+         number_breaks,
+         age,
+         ndvi_annual_sd,
+         ndvi_sd_ts,
+         ndvi_min_ts,
+         ndvi_cv_ts,
+         ndwi_sd_ts,
+         ndwi_min_ts,
+         ndwi_annual_min,
+         ndwi_annual_sd)
 
-abs(corr)
+rs_short_cor <- cor(drop_na(rs_short))
+corrplot(rs_short_cor, method = 'ellipse')
+corrplot(rs_short_cor, method = 'number')  
+plot(rs_short$ndvi_annual_sd, rs_short$tree_density)
 
-corr %>%
-  abs() %>%
-  filter(number_breaks )
+# Reducing even more the dataset: 
+
+rs_short %>%
+  # filter(age > 15,
+  #        number_breaks == 0,
+  #        agb_plot_ha < 100) %>%
+  ggplot(aes(y= agb_plot_ha, x= age)) +
+  geom_point() +
+  geom_smooth(method= "lm")
+
+biplot(rda(drop_na(rs_short[,-c(1:5)]), scale = T), display = 'species')
+
+# ndvi_sd_ts and ndvi_cv_ts are VERY similar but the former has slightly 
+# higher correlations with forest structure
+# ndvi and ndwi behave almost he same except for ndwi_annual_min, which I'm keeping
+# I'll drop all other ndwi values and keep ndvi ones:
+# ndvi_annual_sd: average of every year's sd
+# ndvi_sd_ts: sd of all values throughout the entire ts
+# ndvi_min_ts: min ndvi found in ts
+# ndwi_annual_min: average of every year's min value
+
+# Shorter data set:
+
+rs_shorter <- rs_short %>%
+  select(plot_id,
+         tree_density,
+         loreys_height,
+         basal_area_ha,
+         agb_plot_ha,
+         number_breaks,
+         age,
+         ndvi_annual_sd,
+         ndvi_sd_ts,
+         ndvi_min_ts,
+         ndwi_annual_min)
+
+rs_shorter <- rs_shorter %>%
+  mutate(is_unexpected = ifelse(age > 15 &
+                                  number_breaks == 0 &
+                                  agb_plot_ha < 100, "unexpected", "normal")) 
+
+rs_shorter %>%
+  ggplot(aes(x = number_breaks, y = agb_plot_ha)) +
+  geom_point(aes(color= ndwi_annual_min))
+
+rs_shorter %>%
+  filter(is.na(ndvi_annual_sd)) # fix this!!!
 
 # Individual plot visualization -------------------------------------------
 
-p64443_2 %>%
+p68397_3 <- read_csv("output/ts_plots/68397_3.csv")
+View(p68397_3)
+
+# looks disturbed and feels like it has too many trees, 
+# the other plot in this site has way less AGB (nut no breaks!)
+
+p68397_3 %>%
+  ggplot(aes(x= sat_time, y = ndvi)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(limits = c(0,1)) +
+  geom_vline(xintercept = 792777541151)
+
+p68397_1 <- read_csv("output/ts_plots/68397_1.csv")
+View(p68397_1)
+
+p68397_1 %>%
   ggplot(aes(x= sat_time, y = ndvi)) +
   geom_point() +
   geom_line() +
   scale_y_continuous(limits = c(0,1))
 
-
+# Analysis in sites may be better given these variances
