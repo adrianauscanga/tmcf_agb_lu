@@ -1231,6 +1231,9 @@ summary(lm_ba)
 plot(lm_ba)
 bc<- boxcox(lm_ba)
 (lambda <- bc$x[which.max(bc$y)])
+# log(y) if lambda = 0
+# y^lambda-1)/lambda if lambda != 0
+
 
 lm_ba_t <- lm(((basal_area^lambda-1)/lambda) ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
 summary(lm_ba_t)
@@ -1263,6 +1266,7 @@ ms <- regsubsets(loreys_height ~ altitude + slope_gee + mean_age + mean_breaks +
 summary(ms)
 
 ms_sum <- summary(ms)
+
 # Best model:
 data.frame(
   Adj.R2 = (ms_sum$adjr2),
@@ -1283,16 +1287,15 @@ plot(lm_lh)
 
 bc<- boxcox(lm_lh)
 (lambda <- bc$x[which.max(bc$y)])
+# log transform could work
 
 hist(rs_sites_4p$loreys_height)
-hist(sqrt(rs_sites_4p$loreys_height))
-hist((rs_sites_4p$loreys_height)^(1/3))
+hist(log(rs_sites_4p$loreys_height))
 
 shapiro.test(rs_sites_4p$loreys_height)
-shapiro.test(sqrt(rs_sites_4p$loreys_height))
-shapiro.test((rs_sites_4p$loreys_height)^(1/3))
+shapiro.test(log(rs_sites_4p$loreys_height))
 
-lm_lh_t <- lm((loreys_height^(1/3)) ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
+lm_lh_t <- lm(log(loreys_height) ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
 summary(lm_lh_t)
 plot(lm_lh_t)
 
