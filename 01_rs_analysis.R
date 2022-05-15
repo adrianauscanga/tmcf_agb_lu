@@ -824,8 +824,12 @@ ts_breaks_plot <- ts_breaks %>%
   select(-p) %>%
   left_join(dc_year, by = "plot_id") %>%
   filter(year < dc_year+1) %>%
+  mutate(n_break = ifelse(magnitude < 0, 1, 0),
+         p_break = ifelse(magnitude > 0, 1, 0)) %>% 
   group_by(plot_id) %>%
   summarize(number_breaks = n(),
+            number_n_breaks = sum(n_break),
+            number_p_breaks = sum(p_break),
             last_break = last(break_dates),
             magnitude = last(magnitude))
 
@@ -938,40 +942,43 @@ vi_ts <- time_series_dc %>%
             ndwi_max_ts = max(ndwi),
             ndwi_min_ts = min(ndwi),
             ndwi_cv_ts = sd(ndwi)/mean(ndwi) *100,
-            savi_mean_ts = mean(savi),
-            savi_median_ts = median(savi),
-            savi_sd_ts = sd(savi),
-            savi_max_ts = max(savi),
-            savi_min_ts = min(savi),
-            savi_cv_ts = sd(savi)/mean(savi) *100)
+            # savi_mean_ts = mean(savi),
+            # savi_median_ts = median(savi),
+            # savi_sd_ts = sd(savi),
+            # savi_max_ts = max(savi),
+            # savi_min_ts = min(savi),
+            # savi_cv_ts = sd(savi)/mean(savi) *100)
+  )
 
 vi_annual_ts <- time_series_dc %>%
   group_by(plot_id, year) %>%
   summarize(ndvi_annual_min = min(ndvi),
             evi_annual_min = min(evi),
             ndwi_annual_min = min(ndwi),
-            savi_annual_min = min(savi),
+            #savi_annual_min = min(savi),
             ndvi_annual_max = max(ndvi),
             evi_annual_max = max(evi),
             ndwi_annual_max = max(ndwi),
-            savi_annual_max = max(savi),
+            #savi_annual_max = max(savi),
             ndvi_annual_sd = sd(ndvi),
             evi_annual_sd = sd(evi),
             ndwi_annual_sd = sd(ndwi),
-            savi_annual_sd = sd(savi)) %>%
+            #savi_annual_sd = sd(savi)) %>%
+  ) %>%
   group_by(plot_id) %>%
-  summarize(ndvi_annual_min = mean(ndvi_annual_min),
-            evi_annual_min = mean(evi_annual_min),
-            ndwi_annual_min = mean(ndwi_annual_min),
-            savi_annual_min = mean(savi_annual_min),
-            ndvi_annual_max = mean(ndvi_annual_max),
-            evi_annual_max = mean(evi_annual_max),
-            ndwi_annual_max = mean(ndwi_annual_max),
-            savi_annual_max = mean(savi_annual_max),
-            ndvi_annual_sd = mean(ndvi_annual_sd),
-            evi_annual_sd = mean(evi_annual_sd),
-            ndwi_annual_sd = mean(ndwi_annual_sd),
-            savi_annual_sd = mean(savi_annual_sd))
+  summarize(ndvi_annual_min = mean(na.omit(ndvi_annual_min)),
+            evi_annual_min = mean(na.omit(evi_annual_min)),
+            ndwi_annual_min = mean(na.omit(ndwi_annual_min)),
+            #savi_annual_min = mean(na.omit(savi_annual_min)),
+            ndvi_annual_max = mean(na.omit(ndvi_annual_max)),
+            evi_annual_max = mean(na.omit(evi_annual_max)),
+            ndwi_annual_max = mean(na.omit(ndwi_annual_max)),
+            #savi_annual_max = mean(na.omit(savi_annual_max)),
+            ndvi_annual_sd = mean(na.omit(ndvi_annual_sd)),
+            evi_annual_sd = mean(na.omit(evi_annual_sd)),
+            ndwi_annual_sd = mean(na.omit(ndwi_annual_sd)),
+            #savi_annual_sd = mean(na.omit(savi_annual_sd))) 
+  )
 
 # Remove plots that are not in plots_cf:
 vi_ts <- vi_ts %>%
@@ -990,6 +997,354 @@ plots_cf_rs <- inner_join(plots_cf_breaks, plots_cf_vi) #plots_cf with remote se
 plots_cf_rs <- plots_cf_rs %>%
   mutate(age = ifelse(is.na(age), year-1993, age))
   
+
+# Calculate SAVI *CHECK
+# Calculate average of the lowest and highest vi value per year *CHECK
+# PCA with rs values and AGB and structure?
+
+plots_cf_rs %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 20, age)) %>%
+  mutate(no_breaks_class = ifelse(number_breaks == 0, "0",
+                                  ifelse(number_breaks == 1, "1",
+                                         ifelse(number_breaks == 2, "2", ">2")))) %>%
+  ggplot(aes(y = agb_plot, x = age_fixed)) +
+  geom_jitter(aes(color= as.factor(no_breaks_class))) +
+  geom_smooth(method = "lm", span = 1) +
+  scale_y_log10() +
+  scale_color_brewer(type = "qual")
+
+plots_cf_rs %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 20, age)) %>%
+  mutate(no_breaks_class = ifelse(number_breaks == 0, "a",
+                                  ifelse(number_breaks == 1, "b",
+                                         ifelse(number_breaks == 2, "c", "d")))) %>%
+  ggplot(aes(y = agb_plot_ha, x = no_breaks_class)) +
+  geom_boxplot() +
+  stat_compare_means(comparisons = list(c("a", "b"), c("a", "c"), c("a", "d"), c("b", "c"), c("b", "d"), c("c", "d")),
+                     label = "p.signif")
+
+
+plots_cf_rs %>%
+  mutate(no_breaks_class = ifelse(number_breaks == 0, "none",
+                                  ifelse(number_breaks == 1, "one", "several"))) %>%
+  ggplot(aes(y = agb_plot_ha, x = age)) +
+  geom_point(aes(color = no_breaks_class), size = 2) +
+  scale_y_log10() +
+  #scale_color_gradient(low = "forestgreen", high =  "lightgoldenrod2")
+  scale_color_brewer(type = "qual") +
+  geom_smooth(method = "lm", color = "black", alpha = 0.3)
+
+weirdplots <- plots_cf_rs %>%
+  filter(age > 15,
+         agb_plot_ha < 100,
+         str_class_plots == 1,
+         number_breaks == 0)
+
+
+# Comparison of RS data ---------------------------------------------------
+
+rs <- plots_cf_rs[,c(1:2,27,28,30,34,42:84)]
+
+rs_corr <- rs[,-1] %>%
+  scale() %>%
+  na.omit() %>%
+  cor()
+
+rs_corr_cov <- rs_corr %>%
+  as_tibble(rownames = "cov1") %>%
+  pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
+  mutate(abs_value = abs(value)) %>%
+  filter(abs_value > 0.3) %>% #play around with this value to get more (or less) variables
+  filter(!abs_value == 1) %>%
+  filter(cov1 == "tree_density" |
+           cov1 == "loreys_height" |
+           cov1 == "basal_area_ha" |
+           cov1 == "agb_plot_ha") %>%
+  filter(!cov2 == "tree_density" &
+          !cov2 == "loreys_height" &
+          !cov2 == "basal_area_ha" &
+          !cov2 == "agb_plot_ha") %>%
+  filter(!grepl('savi', cov2)) %>%
+  pull(cov2) %>%
+  unique()
+
+rs_corr_matrix <- rs_corr %>%
+  as_tibble(rownames = "cov1") %>%
+  pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
+  mutate(abs_value = abs(value)) %>%
+  filter(abs_value > 0.3) %>% #play around with this value to get more (or less) variables
+  filter(!abs_value == 1) %>%
+  filter(cov1 == "tree_density" |
+           cov1 == "loreys_height" |
+           cov1 == "basal_area_ha" |
+           cov1 == "agb_plot_ha") %>%
+  filter(!cov2 == "tree_density" &
+           !cov2 == "loreys_height" &
+           !cov2 == "basal_area_ha" &
+           !cov2 == "agb_plot_ha") %>%
+  filter(!grepl('savi', cov2))
+
+
+rs_short <- rs %>%
+  select(plot_id,
+         tree_density,
+         loreys_height,
+         basal_area_ha,
+         agb_plot_ha,
+         number_breaks,
+         age,
+         ndvi_annual_sd,
+         ndvi_sd_ts,
+         ndvi_min_ts,
+         ndvi_cv_ts,
+         ndwi_sd_ts,
+         ndwi_min_ts,
+         ndwi_annual_min,
+         ndwi_annual_sd)
+
+rs_short_cor <- cor(drop_na(rs_short[,-1]))
+corrplot(rs_short_cor, method = 'ellipse')
+corrplot(rs_short_cor, method = 'number')  
+plot(rs_short$ndvi_annual_sd, rs_short$tree_density)
+
+# Reducing even more the dataset: 
+
+rs_short %>%
+  # filter(age > 15,
+  #        number_breaks == 0,
+  #        agb_plot_ha < 100) %>%
+  ggplot(aes(y= agb_plot_ha, x= age)) +
+  geom_point() +
+  geom_smooth(method= "lm")
+
+biplot(rda(drop_na(rs_short[,-c(1:5)]), scale = T), display = 'species')
+
+# ndvi_sd_ts and ndvi_cv_ts are VERY similar but the former has slightly 
+# higher correlations with forest structure
+# ndvi and ndwi behave almost he same except for ndwi_annual_min, which I'm keeping
+# I'll drop all other ndwi values and keep ndvi ones:
+# ndvi_annual_sd: average of every year's sd
+# ndvi_sd_ts: sd of all values throughout the entire ts
+# ndvi_min_ts: min ndvi found in ts
+# ndwi_annual_min: average of every year's min value
+
+# Shorter data set:
+
+rs_shorter <- rs_short %>%
+  select(plot_id,
+         tree_density,
+         loreys_height,
+         basal_area_ha,
+         agb_plot_ha,
+         number_breaks,
+         age,
+         ndvi_annual_sd,
+         ndvi_sd_ts,
+         ndvi_min_ts,
+         ndwi_annual_min)
+
+rs_shorter <- rs_shorter %>%
+  mutate(is_unexpected = ifelse(age > 15 &
+                                  number_breaks == 0 &
+                                  agb_plot_ha < 100, "unexpected", "normal")) 
+
+rs_shorter %>%
+  mutate(normal_b = ifelse(number_breaks > 0 & is_unexpected == "normal",
+                           "n_b",
+                           ifelse(number_breaks == 0 & is_unexpected == "normal",
+                                  "n_nb", "un_nb"))) %>%
+  ggplot(aes(x = normal_b, y = ndvi_sd_ts)) +
+  geom_boxplot() +
+  stat_compare_means(method = "anova") +
+  geom_jitter(aes(color = log1p(agb_plot_ha)))
+  
+
+# By site:
+
+rs_sites <- rs_shorter %>%
+  separate(plot_id, into = c("site", "plot"), sep = "_") %>%
+  group_by(site) %>%
+  summarize(no_plots = n(),
+            tree_density = mean(tree_density),
+            loreys_height = mean(loreys_height),
+            basal_area = mean(basal_area_ha),
+            agb = mean(agb_plot_ha),
+            total_breaks = sum(number_breaks),
+            mean_breaks = mean(number_breaks),
+            age = as.numeric(age),
+            mean_age = mean(age),
+            ndvi_annual_sd = mean(ndvi_annual_sd),
+            ndvi_sd_ts = mean(ndvi_sd_ts),
+            ndvi_min_ts = mean(ndvi_min_ts),
+            ndwi_annual_min = mean(ndwi_annual_min)) %>%
+  mutate(is_unexpected = ifelse(mean_age > 15 &
+                                  mean_breaks == 0 &
+                                  agb < 100, "unexpected", "normal"))
+
+
+rs_sites %>%
+  mutate(normal_b = ifelse(mean_breaks > 0 & is_unexpected == "normal",
+                           "n_b",
+                           ifelse(mean_breaks == 0 & is_unexpected == "normal",
+                                  "n_nb", "un_nb"))) %>%
+  filter(no_plots > 3) %>%
+  ggplot(aes(x = mean_age, y = basal_area)) +
+  geom_point(aes(color= mean_breaks)) +
+  geom_smooth(method = "loess", se = F)
+
+rs_sites_4p <- rs_sites %>%
+  filter(no_plots > 3)
+
+summary(lm(rs_sites_4p$ndwi_annual_min ~ rs_sites_4p$loreys_height))
+
+rs_sites_4p <- sites_cf %>%
+  select(altitude, slope_gee) %>%
+  right_join(rs_sites_4p)
+
+# Models
+
+library(leaps)
+
+# LM basal area
+
+ms <- regsubsets(basal_area ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(ms)
+
+ms_sum <- summary(ms)
+# Best model:
+data.frame(
+  Adj.R2 = (ms_sum$adjr2),
+  CP = (ms_sum$cp),
+  BIC = (ms_sum$bic)
+)
+data.frame(
+  Adj.R2 = which.max(ms_sum$adjr2),
+  CP = which.min(ms_sum$cp),
+  BIC = which.min(ms_sum$bic)
+)
+
+ms_sum
+
+lm_ba <- lm(basal_area ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_ba)
+
+plot(lm_ba)
+bc<- boxcox(lm_ba)
+(lambda <- bc$x[which.max(bc$y)])
+
+lm_ba_t <- lm(((basal_area^lambda-1)/lambda) ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_ba_t)
+plot(lm_ba_t)
+
+# This is the good one:
+lm_ba_t2 <- lm((basal_area^(1/3)) ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_ba_t2)
+plot(lm_ba_t2)
+
+#Q-Q plot for original model
+qqnorm(lm_ba$residuals)
+qqline(lm_ba$residuals)
+
+#Q-Q plot for Box-Cox transformed model
+qqnorm(lm_ba_t2$residuals)
+qqline(lm_ba_t2$residuals)
+
+hist(((rs_sites_4p$basal_area)^lambda-1)/lambda)
+hist((rs_sites_4p$basal_area)^(1/3))
+hist(rs_sites_4p$basal_area)
+
+shapiro.test(((rs_sites_4p$basal_area)^lambda-1)/lambda)
+shapiro.test((rs_sites_4p$basal_area)^(1/3)) # Not perfect but better
+shapiro.test(rs_sites_4p$basal_area)
+
+# LM tree height
+
+ms <- regsubsets(loreys_height ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(ms)
+
+ms_sum <- summary(ms)
+# Best model:
+data.frame(
+  Adj.R2 = (ms_sum$adjr2),
+  CP = (ms_sum$cp),
+  BIC = (ms_sum$bic)
+)
+data.frame(
+  Adj.R2 = which.max(ms_sum$adjr2),
+  CP = which.min(ms_sum$cp),
+  BIC = which.min(ms_sum$bic)
+)
+
+ms_sum
+
+lm_lh <- lm(loreys_height ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
+summary(lm_lh)
+plot(lm_lh)
+
+bc<- boxcox(lm_lh)
+(lambda <- bc$x[which.max(bc$y)])
+
+hist(rs_sites_4p$loreys_height)
+hist(sqrt(rs_sites_4p$loreys_height))
+hist((rs_sites_4p$loreys_height)^(1/3))
+
+shapiro.test(rs_sites_4p$loreys_height)
+shapiro.test(sqrt(rs_sites_4p$loreys_height))
+shapiro.test((rs_sites_4p$loreys_height)^(1/3))
+
+lm_lh_t <- lm((loreys_height^(1/3)) ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
+summary(lm_lh_t)
+plot(lm_lh_t)
+
+#Q-Q plot for original model
+qqnorm(lm_lh$residuals)
+qqline(lm_lh$residuals)
+
+#Q-Q plot for Box-Cox transformed model
+qqnorm(lm_lh_t$residuals)
+qqline(lm_lh_t$residuals)
+
+# LM tree density
+
+# LM AGB
+
+# -> do I need to transform data (to normal distribution)?
+
+# 1. Compare 'historical' VI trends vs VI when data collection
+# 2. Compare model with and without (only climate) VI trends
+# 3. Linear mixed effects model with and without breaks?
+
+# Individual plot visualization -------------------------------------------
+
+p68397_3 <- read_csv("output/ts_plots/68397_3.csv")
+View(p68397_3)
+
+# looks disturbed and feels like it has too many trees, 
+# the other plot in this site has way less AGB (but no breaks!)
+
+p68397_3 %>%
+  ggplot(aes(x= sat_time, y = ndvi)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(limits = c(0,1)) +
+  geom_vline(xintercept = 792777541151)
+
+p68397_1 <- read_csv("output/ts_plots/68397_1.csv")
+View(p68397_1)
+
+p68397_1 %>%
+  ggplot(aes(x= sat_time, y = ndvi)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(limits = c(0,1))
+
+# Analysis in sites may be better given these variances
+
+
+
+# Sites -------------------------------------------------------------------
+
+
 # Summarize break info by site:
 
 sites_breaks <- plots_cf_rs %>%
@@ -1064,68 +1419,6 @@ sites_cf_rs %>%
 #   summarize(counts = n(),
 #             vi = mean(ndvi_mean_ts)) # ANOVAS ?
 
-# Calculate SAVI *CHECK
-# Calculate average of the lowest and highest vi value per year *CHECK
-# PCA with rs values and AGB and structure?
-
-
-# Filter sites with low agb (agb < 100) and mean_age > 15
-
-weird <- sites_cf_rs %>%
-  filter(av_agb_site < 100,
-         mean_age > 15)
-
-weird %>%
-  group_by(is_break) %>%
-  summarize(breaks_total = n())
-
-
-sites_cf_rs %>%
-  filter(plot_no > 2,
-         is_break == "break") %>%
-  ggplot(aes(y = av_agb_site, x = mean_age)) +
-  geom_point(aes(color = landscape, shape = is_break))  +
-  scale_y_log10() +
-  geom_smooth(method = "lm", span = 1)
-
-plots_cf_rs %>%
-  mutate(age_fixed = ifelse(number_breaks == 0, 20, age)) %>%
-  mutate(no_breaks_class = ifelse(number_breaks == 0, "0",
-                                  ifelse(number_breaks == 1, "1",
-                                         ifelse(number_breaks == 2, "2", ">2")))) %>%
-  ggplot(aes(y = agb_plot, x = age_fixed)) +
-  geom_jitter(aes(color= as.factor(no_breaks_class))) +
-  geom_smooth(method = "lm", span = 1) +
-  scale_y_log10() +
-  scale_color_brewer(type = "qual")
-
-plots_cf_rs %>%
-  mutate(age_fixed = ifelse(number_breaks == 0, 20, age)) %>%
-  mutate(no_breaks_class = ifelse(number_breaks == 0, "a",
-                                  ifelse(number_breaks == 1, "b",
-                                         ifelse(number_breaks == 2, "c", "d")))) %>%
-  ggplot(aes(y = agb_plot_ha, x = no_breaks_class)) +
-  geom_boxplot() +
-  stat_compare_means(comparisons = list(c("a", "b"), c("a", "c"), c("a", "d"), c("b", "c"), c("b", "d"), c("c", "d")),
-                     label = "p.signif")
-
-
-plots_cf_rs %>%
-  mutate(no_breaks_class = ifelse(number_breaks == 0, "none",
-                                  ifelse(number_breaks == 1, "one", "several"))) %>%
-  ggplot(aes(y = agb_plot_ha, x = age)) +
-  geom_point(aes(color = no_breaks_class), size = 2) +
-  scale_y_log10() +
-  #scale_color_gradient(low = "forestgreen", high =  "lightgoldenrod2")
-  scale_color_brewer(type = "qual") +
-  geom_smooth(method = "lm", color = "black", alpha = 0.3)
-
-weirdplots <- plots_cf_rs %>%
-  filter(age > 15,
-         agb_plot_ha < 100,
-         str_class_plots == 1,
-         number_breaks == 0)
-
 summary(lm(sites_cf_rs$av_agb_site ~ sites_cf_rs$ndvi_mean_ts))
 
 sites_cf_rs %>%
@@ -1142,145 +1435,3 @@ sites_cf_rs %>%
   scale_y_log10() +
   #scale_x_log10() +
   geom_smooth(method = "lm")
-
-
-
-# Comparison of RS data ---------------------------------------------------
-
-rs <- plots_cf_rs[,c(1,2,25,26,28,32,40:91)]
-
-rs_corr <- rs[,-1] %>%
-  scale() %>%
-  na.omit() %>%
-  cor()
-
-rs_corr_cov <- rs_corr %>%
-  as_tibble(rownames = "cov1") %>%
-  pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
-  mutate(abs_value = abs(value)) %>%
-  filter(abs_value > 0.3) %>% #play around with this value to get more (or less) variables
-  filter(!abs_value == 1) %>%
-  filter(cov1 == "tree_density" |
-           cov1 == "loreys_height" |
-           cov1 == "basal_area_ha" |
-           cov1 == "agb_plot_ha") %>%
-  filter(!cov2 == "tree_density" &
-          !cov2 == "loreys_height" &
-          !cov2 == "basal_area_ha" &
-          !cov2 == "agb_plot_ha") %>%
-  filter(!grepl('savi', cov2)) %>%
-  pull(cov2) %>%
-  unique()
-
-rs_corr_matrix <- rs_corr %>%
-  as_tibble(rownames = "cov1") %>%
-  pivot_longer(c(-cov1), names_to = "cov2", values_to = "value") %>%
-  mutate(abs_value = abs(value)) %>%
-  filter(abs_value > 0.3) %>% #play around with this value to get more (or less) variables
-  filter(!abs_value == 1) %>%
-  filter(cov1 == "tree_density" |
-           cov1 == "loreys_height" |
-           cov1 == "basal_area_ha" |
-           cov1 == "agb_plot_ha") %>%
-  filter(!cov2 == "tree_density" &
-           !cov2 == "loreys_height" &
-           !cov2 == "basal_area_ha" &
-           !cov2 == "agb_plot_ha") %>%
-  filter(!grepl('savi', cov2))
-
-
-rs_short <- rs %>%
-  select(plot_id,
-         tree_density,
-         loreys_height,
-         basal_area_ha,
-         agb_plot_ha,
-         number_breaks,
-         age,
-         ndvi_annual_sd,
-         ndvi_sd_ts,
-         ndvi_min_ts,
-         ndvi_cv_ts,
-         ndwi_sd_ts,
-         ndwi_min_ts,
-         ndwi_annual_min,
-         ndwi_annual_sd)
-
-rs_short_cor <- cor(drop_na(rs_short))
-corrplot(rs_short_cor, method = 'ellipse')
-corrplot(rs_short_cor, method = 'number')  
-plot(rs_short$ndvi_annual_sd, rs_short$tree_density)
-
-# Reducing even more the dataset: 
-
-rs_short %>%
-  # filter(age > 15,
-  #        number_breaks == 0,
-  #        agb_plot_ha < 100) %>%
-  ggplot(aes(y= agb_plot_ha, x= age)) +
-  geom_point() +
-  geom_smooth(method= "lm")
-
-biplot(rda(drop_na(rs_short[,-c(1:5)]), scale = T), display = 'species')
-
-# ndvi_sd_ts and ndvi_cv_ts are VERY similar but the former has slightly 
-# higher correlations with forest structure
-# ndvi and ndwi behave almost he same except for ndwi_annual_min, which I'm keeping
-# I'll drop all other ndwi values and keep ndvi ones:
-# ndvi_annual_sd: average of every year's sd
-# ndvi_sd_ts: sd of all values throughout the entire ts
-# ndvi_min_ts: min ndvi found in ts
-# ndwi_annual_min: average of every year's min value
-
-# Shorter data set:
-
-rs_shorter <- rs_short %>%
-  select(plot_id,
-         tree_density,
-         loreys_height,
-         basal_area_ha,
-         agb_plot_ha,
-         number_breaks,
-         age,
-         ndvi_annual_sd,
-         ndvi_sd_ts,
-         ndvi_min_ts,
-         ndwi_annual_min)
-
-rs_shorter <- rs_shorter %>%
-  mutate(is_unexpected = ifelse(age > 15 &
-                                  number_breaks == 0 &
-                                  agb_plot_ha < 100, "unexpected", "normal")) 
-
-rs_shorter %>%
-  ggplot(aes(x = number_breaks, y = agb_plot_ha)) +
-  geom_point(aes(color= ndwi_annual_min))
-
-rs_shorter %>%
-  filter(is.na(ndvi_annual_sd)) # fix this!!!
-
-# Individual plot visualization -------------------------------------------
-
-p68397_3 <- read_csv("output/ts_plots/68397_3.csv")
-View(p68397_3)
-
-# looks disturbed and feels like it has too many trees, 
-# the other plot in this site has way less AGB (nut no breaks!)
-
-p68397_3 %>%
-  ggplot(aes(x= sat_time, y = ndvi)) +
-  geom_point() +
-  geom_line() +
-  scale_y_continuous(limits = c(0,1)) +
-  geom_vline(xintercept = 792777541151)
-
-p68397_1 <- read_csv("output/ts_plots/68397_1.csv")
-View(p68397_1)
-
-p68397_1 %>%
-  ggplot(aes(x= sat_time, y = ndvi)) +
-  geom_point() +
-  geom_line() +
-  scale_y_continuous(limits = c(0,1))
-
-# Analysis in sites may be better given these variances
