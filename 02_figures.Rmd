@@ -1,0 +1,112 @@
+---
+title: "02_figures"
+author: "Adriana Uscanga"
+date: '2022-05-16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Figures 1 and 2. Timeline and Study Area Map
+
+# Figure 3. Break example
+
+# Figure 4. Variables
+```{r}
+p66139_2 <- read_csv("output/ts_plots/66139_2.csv")
+
+annual <- p66139_2 %>%
+  arrange(sat_time) %>%
+  mutate(year = year(date)) %>%
+  group_by(year) %>%
+  summarize(sat_time = as.numeric(sat_time),
+            time1= paste0(year,"-01-01"),
+            time2 = paste0(year+1,"-01-01"),
+            ndvi_annual_sd = sd(ndvi),
+            ndvi_annual_mean = mean(ndvi),
+            ndvi_sd_1 = ndvi_annual_mean - ndvi_annual_sd,
+            ndvi_sd_2 = ndvi_annual_mean + ndvi_annual_sd,
+            ndvi_annual_min = min(ndvi),
+            is_min = ifelse(ndvi == ndvi_annual_min, "min", NA)) %>%
+  mutate(time1 = as_date(time1),
+         time2 = as_date(time2))
+
+p66139_2 <- p66139_2 %>%
+  left_join(annual, by = "sat_time")
+
+mean(p66139_2$ndvi)
+sd(p66139_2$ndvi)
+min(p66139_2$ndvi)
+```
+
+Plot:
+
+```{r}
+p66139_2 %>%
+  mutate(year = year(date),
+         date = as.Date(date)) %>%
+  ggplot(aes(x= date, y = ndvi)) +
+  scale_x_date() +
+  # time series box
+  geom_rect(aes(xmin = p66139_2$date[1]-30,
+                xmax = p66139_2$date[270]+30,
+                ymin = 0.7632497-0.08261055,
+                ymax = 0.7632497+0.08261055),
+            fill = "gray95",
+            #color= "gray70",
+            alpha = 0.75) +
+  # annual boxes
+  geom_rect(aes(xmin = time1, xmax = time2, ymin = ndvi_sd_1, ymax = ndvi_sd_2),
+            fill = "gray99",
+            color= "gray70",
+            alpha = 0.75) +
+  # annual ndvi mean
+  # geom_segment(aes(x = time1, xend = time2, y = ndvi_annual_mean, yend = ndvi_annual_mean),
+  #              color = "gray70",
+  #              size = 0.5,
+  #              linetype = 1) +
+  # annual ndvi sd
+  # geom_segment(aes(x = time1, xend = time2, y = ndvi_sd_1, yend = ndvi_sd_1),
+  #              color = "#66c2a5",
+  #              #size = 1,
+  #              linetype = 3) +
+  # geom_segment(aes(x = time1, xend = time2, y = ndvi_sd_2, yend = ndvi_sd_2),
+  #              color = "#66c2a5",
+  #              #size = 1,
+  #              linetype = 3) +
+ 
+  # ndvi values - time series
+  geom_line(aes(x= date, y = ndvi),
+            color = "grey80",
+            alpha = 0.6) +
+  scale_y_continuous(limits = c(0.25,1)) +
+  # ndvi values - time series
+  geom_point(aes(x= date, y = ndvi, color = is_min),
+             shape = 19,
+             alpha = 0.90) +
+  scale_color_manual(values = c("#8da0cb", "gray90")) +
+  # breaks
+  geom_vline(xintercept = as.numeric(p66139_2$date[c(71, 119, 260)]),
+             color = "black",
+             linetype = 2,
+             size = 0.75) +
+  # data collection date
+  geom_vline(xintercept = as.numeric(p66139_2$date[203]),
+             color = "black",
+             linetype = "solid",
+             size = 0.75) +
+  # mean NDVI (full time series)
+  # geom_hline(yintercept = 0.7632497,
+  #            color = "#66c2a5",
+  #            size = 0.75,
+  #            linetype = 2) +
+  # NDVI sd (full time series)
+  # age since last disturbance
+  theme_classic2()
+
+```
+
+
+# Figure 5. Forest structure ~ RS variables

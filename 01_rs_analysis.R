@@ -1309,7 +1309,91 @@ qqline(lm_lh_t$residuals)
 
 # LM tree density
 
+ms <- regsubsets(tree_density ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(ms)
+
+ms_sum <- summary(ms)
+
+# Best model:
+data.frame(
+  Adj.R2 = (ms_sum$adjr2),
+  CP = (ms_sum$cp),
+  BIC = (ms_sum$bic)
+)
+data.frame(
+  Adj.R2 = which.max(ms_sum$adjr2),
+  CP = which.min(ms_sum$cp),
+  BIC = which.min(ms_sum$bic)
+)
+
+ms_sum
+
+lm_td <- lm(tree_density ~ altitude + mean_breaks + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_td)
+plot(lm_td)
+
+bc<- boxcox(lm_td)
+(lambda <- bc$x[which.max(bc$y)])
+
+hist(rs_sites_4p$tree_density)
+hist(log(rs_sites_4p$tree_density))
+hist(sqrt(rs_sites_4p$tree_density))
+hist((rs_sites_4p$tree_density)^(1/3))
+
+shapiro.test(rs_sites_4p$tree_density)
+shapiro.test(log(rs_sites_4p$tree_density))
+shapiro.test(sqrt(rs_sites_4p$tree_density)) # This is the good one
+shapiro.test((rs_sites_4p$tree_density)^(1/3))
+
+lm_td_t <- lm(sqrt(tree_density) ~ altitude + mean_breaks + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_td_t)
+plot(lm_td_t)
+
+lm_td_t2 <- lm(sqrt(tree_density) ~ altitude + mean_age + mean_breaks + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_td_t2)
+plot(lm_td_t2)
+
 # LM AGB
+
+ms <- regsubsets(log1p(agb) ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(ms)
+
+ms_sum <- summary(ms)
+
+# Best model:
+data.frame(
+  Adj.R2 = (ms_sum$adjr2),
+  CP = (ms_sum$cp),
+  BIC = (ms_sum$bic)
+)
+data.frame(
+  Adj.R2 = which.max(ms_sum$adjr2),
+  CP = which.min(ms_sum$cp),
+  BIC = which.min(ms_sum$bic)
+)
+
+ms_sum
+
+lm_agb <- lm(agb ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+summary(lm_agb)
+plot(lm_agb)
+
+bc<- boxcox(lm_agb)
+(lambda <- bc$x[which.max(bc$y)])
+
+hist(rs_sites_4p$agb)
+hist(log1p(rs_sites_4p$agb))
+hist(sqrt(rs_sites_4p$agb))
+hist((rs_sites_4p$agb)^(1/3))
+
+shapiro.test(rs_sites_4p$agb)
+shapiro.test(log1p(rs_sites_4p$agb)) #the least worse but not normal
+shapiro.test(sqrt(rs_sites_4p$agb))
+shapiro.test((rs_sites_4p$agb)^(1/3))
+
+lm_agb_t <- lm(log1p(agb) ~ altitude + slope_gee +  ndvi_sd_ts, data = rs_sites_4p)
+summary(lm_agb_t)
+plot(lm_agb_t)
 
 # -> do I need to transform data (to normal distribution)?
 
@@ -1319,18 +1403,23 @@ qqline(lm_lh_t$residuals)
 
 # Individual plot visualization -------------------------------------------
 
-p68397_3 <- read_csv("output/ts_plots/68397_3.csv")
-View(p68397_3)
+p66139_2 <- read_csv("output/ts_plots/66139_2.csv")
+View(p66139_2)
 
 # looks disturbed and feels like it has too many trees, 
 # the other plot in this site has way less AGB (but no breaks!)
 
-p68397_3 %>%
-  ggplot(aes(x= sat_time, y = ndvi)) +
-  geom_point() +
-  geom_line() +
+p66139_2 %>%
+  ggplot(aes(x= sat_time)) +
+  geom_point(aes(y = ndvi), color = "darkgreen") +
+  geom_line(aes(y = ndvi), color = "darkgreen") +
+  geom_point(aes(y = ndwi), color = "blue") +
+  geom_line(aes(y = ndwi), color = "blue") +
   scale_y_continuous(limits = c(0,1)) +
-  geom_vline(xintercept = 792777541151)
+  geom_vline(xintercept = 892311875560, color = "red") +
+  geom_vline(xintercept = 976638420716, color = "red") +
+  geom_vline(xintercept = 1.555779e+12, color = "red") +
+  geom_vline(xintercept = 1.33183e+12, color = "yellow")
 
 p68397_1 <- read_csv("output/ts_plots/68397_1.csv")
 View(p68397_1)
