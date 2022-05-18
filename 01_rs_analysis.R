@@ -1171,7 +1171,7 @@ rs_sites <- rs_shorter %>%
             agb = mean(agb_plot_ha),
             total_breaks = sum(number_breaks),
             mean_breaks = mean(number_breaks),
-            age = as.numeric(age),
+            min_age = min(age),
             mean_age = mean(age),
             ndvi_annual_sd = mean(ndvi_annual_sd),
             ndvi_sd_ts = mean(ndvi_sd_ts),
@@ -1200,6 +1200,7 @@ summary(lm(rs_sites_4p$ndwi_annual_min ~ rs_sites_4p$loreys_height))
 rs_sites_4p <- sites_cf %>%
   select(altitude, slope_gee) %>%
   right_join(rs_sites_4p)
+
 
 # Models
 
@@ -1253,9 +1254,14 @@ qqnorm(lm_ba_t2$residuals)
 qqline(lm_ba_t2$residuals)
 
 hist(((rs_sites_4p$basal_area)^lambda-1)/lambda)
-hist((rs_sites_4p$basal_area)^(1/3))
+hist((rs_sites_4p$basal_area)^(1/3), breaks = 8)
 hist(rs_sites_4p$basal_area)
+hist(sqrt(rs_sites_4p$basal_area))
+hist(lm_ba$residuals)
+hist((lm_ba$residuals)^(1/3))
+hist(sqrt(lm_ba$residuals))
 
+shapiro.test(lm_ba$residuals) #W = 0.96834, p-value = 0.3334     
 shapiro.test(((rs_sites_4p$basal_area)^lambda-1)/lambda)
 shapiro.test((rs_sites_4p$basal_area)^(1/3)) # Not perfect but better
 shapiro.test(rs_sites_4p$basal_area)

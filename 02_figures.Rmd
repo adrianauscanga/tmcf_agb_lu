@@ -49,24 +49,16 @@ p66139_2 %>%
          date = as.Date(date)) %>%
   ggplot(aes(x= date, y = ndvi)) +
   scale_x_date() +
-  # time series box
-  geom_rect(aes(xmin = p66139_2$date[1]-30,
-                xmax = p66139_2$date[270]+30,
-                ymin = 0.7632497-0.08261055,
-                ymax = 0.7632497+0.08261055),
-            fill = "gray95",
-            #color= "gray70",
-            alpha = 0.75) +
   # annual boxes
   geom_rect(aes(xmin = time1, xmax = time2, ymin = ndvi_sd_1, ymax = ndvi_sd_2),
-            fill = "gray99",
-            color= "gray70",
-            alpha = 0.75) +
+            fill = "gray96",
+            #color= "gray80",
+            alpha = 0.10) +
   # annual ndvi mean
-  # geom_segment(aes(x = time1, xend = time2, y = ndvi_annual_mean, yend = ndvi_annual_mean),
-  #              color = "gray70",
-  #              size = 0.5,
-  #              linetype = 1) +
+  geom_segment(aes(x = time1, xend = time2, y = ndvi_annual_mean, yend = ndvi_annual_mean),
+               color = "gray80",
+               size = 0.5,
+               linetype = 1) +
   # annual ndvi sd
   # geom_segment(aes(x = time1, xend = time2, y = ndvi_sd_1, yend = ndvi_sd_1),
   #              color = "#66c2a5",
@@ -84,27 +76,58 @@ p66139_2 %>%
   scale_y_continuous(limits = c(0.25,1)) +
   # ndvi values - time series
   geom_point(aes(x= date, y = ndvi, color = is_min),
-             shape = 19,
+             shape = 20,
              alpha = 0.90) +
-  scale_color_manual(values = c("#8da0cb", "gray90")) +
+  scale_color_manual(values = c("#fc8d62", "gray90")) +
+  # min ndvi value
+  geom_point(aes(x= p66139_2$date[73], y = 0.2649842),
+             shape = 19,
+             size= 2,
+             color = "#fc8d62") +
   # breaks
   geom_vline(xintercept = as.numeric(p66139_2$date[c(71, 119, 260)]),
-             color = "black",
+             color = "gray20",
              linetype = 2,
              size = 0.75) +
   # data collection date
   geom_vline(xintercept = as.numeric(p66139_2$date[203]),
-             color = "black",
+             color = "gray60",
              linetype = "solid",
              size = 0.75) +
   # mean NDVI (full time series)
-  # geom_hline(yintercept = 0.7632497,
-  #            color = "#66c2a5",
-  #            size = 0.75,
-  #            linetype = 2) +
+  geom_hline(yintercept = 0.7632497,
+             color = "#66c2a5",
+             size = 1,
+             linetype = 3) +
   # NDVI sd (full time series)
+  geom_segment(aes(x = p66139_2$date[270]+(365*2),
+                xend = p66139_2$date[270]+(365*2),
+                y = 0.7632497-0.08261055,
+                yend = 0.7632497+0.08261055),
+            color= "#66c2a5",
+            size= 0.75,
+            alpha = 0.25,
+            linetype = 1,
+            arrow = arrow(ends = "both", angle = 90, length = unit(.1,"cm"))) +
   # age since last disturbance
-  theme_classic2()
+   annotate("segment",
+            x = p66139_2$date[119]+10,
+            xend = p66139_2$date[203]-10,
+            y = 0.4,
+            yend = 0.4,
+            color = "#8da0cb",
+            size = 0.75,
+            arrow = arrow(ends = "both", length = unit(.15,"cm"))) +
+# geom_segment(aes(x = p66139_2$date[119],
+#                    xend = p66139_2$date[203],
+#                    y = 0.4,
+#                    yend = 0.4),
+#                color = "#8da0cb",
+#                size = 1,
+#                linetype = 1,
+#                lineend = "round") +
+  theme_classic2() +
+  theme(legend.position = "none") 
 
 ```
 
