@@ -1533,3 +1533,15 @@ sites_cf_rs %>%
   scale_y_log10() +
   #scale_x_log10() +
   geom_smooth(method = "lm")
+
+# Bart: seasonal variation -- make month/year plot
+
+# histogram of redisuals
+# 
+# check what's happening with ouliers
+# 
+# Models are using ~160 rows--fix it!!!
+# 
+# 
+# Frontiers in Biogeo
+# Frontiers in Ecology 

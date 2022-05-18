@@ -44,21 +44,53 @@ min(p66139_2$ndvi)
 Plot:
 
 ```{r}
+
 p66139_2 %>%
   mutate(year = year(date),
          date = as.Date(date)) %>%
   ggplot(aes(x= date, y = ndvi)) +
   scale_x_date() +
+  # NDVI sd (full time series)
+  # geom_segment(aes(x = p66139_2$date[270]+(365*2),
+  #               xend = p66139_2$date[270]+(365*2),
+  #               y = 0.7632497-0.08261055,
+  #               yend = 0.7632497+0.08261055),
+  #           color= "#66c2a5",
+  #           size= 0.75,
+  #           alpha = 0.25,
+  #           linetype = 1,
+  #           arrow = arrow(ends = "both", angle = 90, length = unit(.1,"cm"))) +
+  geom_rect(aes(xmin = p66139_2$date[1]-365, xmax = p66139_2$date[270]+365, ymin = ndvi_sd_1, ymax = ndvi_sd_2),
+             fill = "gray95",
+             #color= "gray80",
+             alpha = 0.10) +
+  # annual lines
+  geom_vline(xintercept = as.numeric(p66139_2$time1[c(1,16,31,43,56,63,80,95,120,132,138,143,151,156,160,167,171,181,192,202,210,217,226,233,240,250,258,270)]),
+             color = "gray90",
+             linetype = 5,
+             size = 0.25) +
+  geom_vline(xintercept = as.numeric(p66139_2$time1[c(270)]+365),
+             color = "gray90",
+             linetype = 5,
+             size = 0.25) +
   # annual boxes
-  geom_rect(aes(xmin = time1, xmax = time2, ymin = ndvi_sd_1, ymax = ndvi_sd_2),
-            fill = "gray96",
-            #color= "gray80",
-            alpha = 0.10) +
+  # geom_rect(aes(xmin = time1, xmax = time2, ymin = ndvi_sd_1, ymax = ndvi_sd_2),
+  #           fill = "gray95",
+  #           #color= "gray80",
+  #           alpha = 0.10) +
   # annual ndvi mean
-  geom_segment(aes(x = time1, xend = time2, y = ndvi_annual_mean, yend = ndvi_annual_mean),
-               color = "gray80",
-               size = 0.5,
-               linetype = 1) +
+  # geom_segment(aes(x = time1, xend = time2, y = ndvi_annual_mean, yend = ndvi_annual_mean),
+  #              color = "#66c2a5",
+  #              size = 0.50,
+  #              linetype = 1,
+  #              alpha = 0.25) +
+  geom_point(aes(x= time2 - 182.5, y = ndvi_annual_mean),
+             color = "#66c2a5",
+             shape = 16) +
+  geom_errorbar(aes(x= time2 - 182.5,
+                    ymin = ndvi_annual_mean - ndvi_annual_sd,
+                    ymax= ndvi_annual_mean + ndvi_annual_sd),
+                color = "#66c2a5") +
   # annual ndvi sd
   # geom_segment(aes(x = time1, xend = time2, y = ndvi_sd_1, yend = ndvi_sd_1),
   #              color = "#66c2a5",
@@ -71,13 +103,13 @@ p66139_2 %>%
  
   # ndvi values - time series
   geom_line(aes(x= date, y = ndvi),
-            color = "grey80",
-            alpha = 0.6) +
+            color = "grey65",
+            alpha = 0.75) +
   scale_y_continuous(limits = c(0.25,1)) +
   # ndvi values - time series
-  geom_point(aes(x= date, y = ndvi, color = is_min),
-             shape = 20,
-             alpha = 0.90) +
+  # geom_point(aes(x= date, y = ndvi, color = is_min),
+  #            shape = 20,
+  #            alpha = 0.90) +
   scale_color_manual(values = c("#fc8d62", "gray90")) +
   # min ndvi value
   geom_point(aes(x= p66139_2$date[73], y = 0.2649842),
@@ -96,19 +128,9 @@ p66139_2 %>%
              size = 0.75) +
   # mean NDVI (full time series)
   geom_hline(yintercept = 0.7632497,
-             color = "#66c2a5",
-             size = 1,
+             color = "gray75",
+             size = 0.6,
              linetype = 3) +
-  # NDVI sd (full time series)
-  geom_segment(aes(x = p66139_2$date[270]+(365*2),
-                xend = p66139_2$date[270]+(365*2),
-                y = 0.7632497-0.08261055,
-                yend = 0.7632497+0.08261055),
-            color= "#66c2a5",
-            size= 0.75,
-            alpha = 0.25,
-            linetype = 1,
-            arrow = arrow(ends = "both", angle = 90, length = unit(.1,"cm"))) +
   # age since last disturbance
    annotate("segment",
             x = p66139_2$date[119]+10,
