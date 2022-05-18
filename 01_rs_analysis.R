@@ -15,6 +15,7 @@ library(bfast)
 library(tseries)
 library(fs)
 library(ggpubr)
+library(scales)
 
 # Load individual plots
 # Make a loop to read all ts plots at once
