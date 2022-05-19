@@ -46,6 +46,13 @@ p66139_2 %>%
              color = "gray20",
              linetype = 2,
              size = 0.75) +
+  # box for panel B
+  geom_rect(aes(xmin = p66139_2$time1[250]-50,
+                xmax = p66139_2$time2[270]+50,
+                ymin = 0.55, ymax = 0.92),
+            fill = NA,
+            color = "gray25",
+            size = 0.75) +
   theme_classic2() +
   labs(x= "Time (years)", y = "NDVI") +
   theme(axis.text = element_text(size = 8)) +
@@ -98,6 +105,48 @@ p66139_2 %>%
                  color = "#66c2a5",
                  size = 0.5,
                  linetype = 3) +
+  # landsat images
+  geom_point(aes(x= p66139_2$date[258],
+                 y = p66139_2$ndvi[258]),
+             shape = 5,
+             size = 3,
+             color = "orange1") +
+  geom_point(aes(x= p66139_2$date[260],
+                 y = p66139_2$ndvi[260]),
+             shape = 5,
+             size = 3,
+             color = "orange1") +
+  geom_point(aes(x= p66139_2$date[263],
+                 y = p66139_2$ndvi[263]),
+             shape = 5,
+             size = 3,
+             color = "orange1") +
+  geom_point(aes(x= p66139_2$date[265],
+                 y = p66139_2$ndvi[265]),
+             shape = 5,
+             size = 3,
+             color = "orange1") +
+  # planet images
+  geom_point(aes(x= p66139_2$date[258]+23,
+                 y = 0.83),
+             shape = 4,
+             size = 3,
+             color = "purple3") +
+  geom_point(aes(x= p66139_2$date[260],
+                 y = p66139_2$ndvi[260]),
+             shape = 4,
+             size = 3,
+             color = "purple3") +
+  geom_point(aes(x= p66139_2$date[262]-4,
+                 y = 0.65),
+             shape = 4,
+             size = 3,
+             color = "purple3") +
+  geom_point(aes(x= p66139_2$date[266]+1,
+                 y = 0.805),
+             shape = 4,
+             size = 3,
+             color = "purple3") +
   theme_classic2() +
   labs(x= "Time (years)", y = "NDVI") +
   theme(axis.text = element_text(size = 8)) +
@@ -105,7 +154,9 @@ p66139_2 %>%
   theme(axis.title.y = element_text(size = 10))
 
 #possible planet images:
-#dec 14, aug 27, may 18, may 9, april 20, april 13, mar 30, feb 15, jan 11
+#aug 27, may 18, april 20, feb 15
+#,260,263,265)]
+# ,260,263,265)])
 ```
 
 
