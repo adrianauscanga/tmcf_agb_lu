@@ -384,3 +384,15 @@ p66139_2 %>%
 
 
 # Figure 5. Forest structure ~ RS variables
+
+```{r}
+
+rs_sites_4p %>%
+  pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ), names_to = "covariates", values_to = "value") %>%
+  ggplot(aes(value, log1p(agb))) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "gray30", alpha = 0.15) +
+  theme_bw() +
+  facet_wrap(~covariates, scales = "free") 
+```
+
