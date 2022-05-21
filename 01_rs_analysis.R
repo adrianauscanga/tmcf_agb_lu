@@ -16,6 +16,9 @@ library(tseries)
 library(fs)
 library(ggpubr)
 library(scales)
+library(leaps)
+library(asbio)
+library(MASS)
 
 # Load individual plots
 # Make a loop to read all ts plots at once
@@ -998,6 +1001,7 @@ plots_cf_rs <- inner_join(plots_cf_breaks, plots_cf_vi) #plots_cf with remote se
 plots_cf_rs <- plots_cf_rs %>%
   mutate(age = ifelse(is.na(age), year-1993, age))
   
+save(plots_cf_rs, file = "output/plots_cf_rs.RData")
 
 # Calculate SAVI *CHECK
 # Calculate average of the lowest and highest vi value per year *CHECK
@@ -1104,6 +1108,7 @@ rs_short <- rs %>%
          ndwi_annual_sd)
 
 rs_short_cor <- cor(drop_na(rs_short[,-1]))
+library(corrplot)
 corrplot(rs_short_cor, method = 'ellipse')
 corrplot(rs_short_cor, method = 'number')  
 plot(rs_short$ndvi_annual_sd, rs_short$tree_density)
@@ -1202,6 +1207,8 @@ rs_sites_4p <- sites_cf %>%
   select(altitude, slope_gee) %>%
   right_join(rs_sites_4p)
 
+save(rs_sites_4p, file = "output/rs_sites_4p.RData")
+
 
 # Models
 
@@ -1209,7 +1216,7 @@ library(leaps)
 
 # LM basal area
 
-ms <- regsubsets(basal_area ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+ms <- regsubsets(basal_area ~ altitude + slope_gee + mean_age + min_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
 
 ms_sum <- summary(ms)
@@ -1231,6 +1238,7 @@ lm_ba <- lm(basal_area ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + nd
 summary(lm_ba)
 
 plot(lm_ba)
+partial.resid.plot(lm_ba)
 bc<- boxcox(lm_ba)
 (lambda <- bc$x[which.max(bc$y)])
 # log(y) if lambda = 0
@@ -1269,7 +1277,7 @@ shapiro.test(rs_sites_4p$basal_area)
 
 # LM tree height
 
-ms <- regsubsets(loreys_height ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+ms <- regsubsets(loreys_height ~ altitude + slope_gee + min_age + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
 
 ms_sum <- summary(ms)
@@ -1288,7 +1296,7 @@ data.frame(
 
 ms_sum
 
-lm_lh <- lm(loreys_height ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
+lm_lh <- lm(loreys_height ~ altitude + slope_gee + ndvi_sd_ts, data = rs_sites_4p)
 summary(lm_lh)
 plot(lm_lh)
 
@@ -1298,13 +1306,23 @@ bc<- boxcox(lm_lh)
 
 hist(rs_sites_4p$loreys_height)
 hist(log(rs_sites_4p$loreys_height))
-
+hist(lm_lh$residuals)
+shapiro.test(lm_lh$residuals)
 shapiro.test(rs_sites_4p$loreys_height)
 shapiro.test(log(rs_sites_4p$loreys_height))
 
 lm_lh_t <- lm(log(loreys_height) ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
 summary(lm_lh_t)
 plot(lm_lh_t)
+
+lm_lh2 <- lm(loreys_height ~ altitude + slope_gee + min_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts, data = rs_sites_4p)
+summary(lm_lh2)
+plot(lm_lh2)
+
+## WINNER!!
+lm_lh3 <- lm(loreys_height ~ altitude + ndvi_sd_ts, data = rs_sites_4p)
+summary(lm_lh3)
+plot(lm_lh3)
 
 #Q-Q plot for original model
 qqnorm(lm_lh$residuals)
@@ -1316,7 +1334,7 @@ qqline(lm_lh_t$residuals)
 
 # LM tree density
 
-ms <- regsubsets(tree_density ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+ms <- regsubsets(tree_density ~ altitude + slope_gee + min_age + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
 
 ms_sum <- summary(ms)
@@ -1335,11 +1353,12 @@ data.frame(
 
 ms_sum
 
-lm_td <- lm(tree_density ~ altitude + mean_breaks + ndwi_annual_min, data = rs_sites_4p)
+lm_td <- lm(tree_density ~ altitude + ndwi_annual_min, data = rs_sites_4p)
 summary(lm_td)
 plot(lm_td)
 
-bc<- boxcox(lm_td)
+
+bc<- boxcox(lm_td$residuals)
 (lambda <- bc$x[which.max(bc$y)])
 
 hist(rs_sites_4p$tree_density)
@@ -1347,12 +1366,15 @@ hist(log(rs_sites_4p$tree_density))
 hist(sqrt(rs_sites_4p$tree_density))
 hist((rs_sites_4p$tree_density)^(1/3))
 
+hist(lm_td$residuals)
+shapiro.test(lm_td$residuals) #W = 0.92631, p-value = 0.01371
+
 shapiro.test(rs_sites_4p$tree_density)
 shapiro.test(log(rs_sites_4p$tree_density))
 shapiro.test(sqrt(rs_sites_4p$tree_density)) # This is the good one
 shapiro.test((rs_sites_4p$tree_density)^(1/3))
 
-lm_td_t <- lm(sqrt(tree_density) ~ altitude + mean_breaks + ndwi_annual_min, data = rs_sites_4p)
+lm_td_t <- lm(sqrt(tree_density) ~ altitude + ndwi_annual_min, data = rs_sites_4p)
 summary(lm_td_t)
 plot(lm_td_t)
 
@@ -1362,7 +1384,7 @@ plot(lm_td_t2)
 
 # LM AGB
 
-ms <- regsubsets(log1p(agb) ~ altitude + slope_gee + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p)
+ms <- regsubsets(log1p(agb) ~ altitude + slope_gee + min_age + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
 
 ms_sum <- summary(ms)
@@ -1381,7 +1403,7 @@ data.frame(
 
 ms_sum
 
-lm_agb <- lm(agb ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+lm_agb <- lm(agb ~ altitude + slope_gee + ndvi_sd_ts, data = rs_sites_4p)
 summary(lm_agb)
 plot(lm_agb)
 
@@ -1392,7 +1414,8 @@ hist(rs_sites_4p$agb)
 hist(log1p(rs_sites_4p$agb))
 hist(sqrt(rs_sites_4p$agb))
 hist((rs_sites_4p$agb)^(1/3))
-
+hist(lm_agb$residuals)
+shapiro.test(lm_agb$residuals)
 shapiro.test(rs_sites_4p$agb)
 shapiro.test(log1p(rs_sites_4p$agb)) #the least worse but not normal
 shapiro.test(sqrt(rs_sites_4p$agb))
@@ -1402,6 +1425,8 @@ lm_agb_t <- lm(log1p(agb) ~ altitude + slope_gee +  ndvi_sd_ts, data = rs_sites_
 summary(lm_agb_t)
 plot(lm_agb_t)
 
+hist(lm_agb_t$residuals)
+shapiro.test(lm_agb_t$residuals)
 # -> do I need to transform data (to normal distribution)?
 
 # 1. Compare 'historical' VI trends vs VI when data collection

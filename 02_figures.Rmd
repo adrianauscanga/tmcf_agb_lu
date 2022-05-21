@@ -11,7 +11,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Figures 1 and 2. Timeline and Study Area Map
 
+```{r}
+# Load packages for making figures:
+library(ggplot2)
+library(ggpubr)
+library(cowplot)
+library(rlang)
+library(ggsignif)
+
+
+```
+
 # Figure 3. Break example
+
+```{r}
+# load p66139_2 data set
+```
+
 
 ```{r}
 #Panel A:
@@ -386,13 +402,182 @@ p66139_2 %>%
 # Figure 5. Forest structure ~ RS variables
 
 ```{r}
+# load rs_sites_4p data set
 
-rs_sites_4p %>%
+load("output/rs_sites_4p.RData")
+
+```
+
+
+```{r}
+
+# Basal area
+
+f5_ba <- rs_sites_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDVI S.D." = as.numeric(ndvi_sd_ts),
+         "NDWIa min" = as.numeric(ndwi_annual_min),
+         "Slope (degrees)" = as.numeric(slope_gee)) %>%
   pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ), names_to = "covariates", values_to = "value") %>%
-  ggplot(aes(value, log1p(agb))) +
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "NDVIa S.D." |
+         covariates == "NDVI S.D." |
+         covariates == "NDWIa min" |
+         covariates == "Slope (degrees)") %>%
+  ggplot(aes(value, basal_area)) +
   geom_point() +
   geom_smooth(method = "lm", color = "gray30", alpha = 0.15) +
   theme_bw() +
-  facet_wrap(~covariates, scales = "free") 
+  facet_wrap(~covariates,
+             scales = "free",
+             ncol = 5) +
+  xlab(NULL) +
+  labs(y = (bquote('Basal Area ('*"m"~ha^-1*')')))
+
+# Tree height
+
+f5_lh <- rs_sites_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDVI S.D." = as.numeric(ndvi_sd_ts),
+         "NDWIa min" = as.numeric(ndwi_annual_min),
+         "Slope (degrees)" = as.numeric(slope_gee)) %>%
+  pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ), names_to = "covariates", values_to = "value") %>%
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "NDVIa S.D." |
+         covariates == "NDVI S.D." |
+         covariates == "NDWIa min" |
+         covariates == "Slope (degrees)") %>%
+  ggplot(aes(value, loreys_height)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "gray30", alpha = 0.15) +
+  theme_bw() +
+  facet_wrap(~covariates,
+             scales = "free",
+             ncol = 5) +
+  xlab(NULL) +
+  labs(y = "Lorey's height (m)")
+
+# Tree density
+
+f5_td <- rs_sites_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDVI S.D." = as.numeric(ndvi_sd_ts),
+         "NDWIa min" = as.numeric(ndwi_annual_min),
+         "Slope (degrees)" = as.numeric(slope_gee)) %>%
+  pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ), names_to = "covariates", values_to = "value") %>%
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "NDVIa S.D." |
+         covariates == "NDVI S.D." |
+         covariates == "NDWIa min" |
+         covariates == "Slope (degrees)") %>%
+  ggplot(aes(value, tree_density)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "gray30", alpha = 0.15) +
+  theme_bw() +
+  facet_wrap(~covariates,
+             scales = "free",
+             ncol = 5) +
+  xlab(NULL) +
+  labs(y = (bquote('Tree density ('*"tree"~ha^-1*')')))
+
+# AGB
+
+f5_agb <- rs_sites_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDVI S.D." = as.numeric(ndvi_sd_ts),
+         "NDWIa min" = as.numeric(ndwi_annual_min),
+         "Slope (degrees)" = as.numeric(slope_gee)) %>%
+  pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ), names_to = "covariates", values_to = "value") %>%
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "NDVIa S.D." |
+         covariates == "NDVI S.D." |
+         covariates == "NDWIa min" |
+         covariates == "Slope (degrees)") %>%
+  ggplot(aes(value, agb)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "gray30", alpha = 0.15) +
+  theme_bw() +
+  facet_wrap(~covariates,
+             scales = "free",
+             ncol = 5) +
+  xlab(NULL) +
+  labs(y = (bquote('AGB ( '*"Mg "~ha^-1*')')))
+
+# Figure 5 
+
+figure5 <- plot_grid(f5_ba, f5_lh, f5_td, f5_agb,
+                  ncol = 1,
+                  nrow = 4,
+                  labels = c("A", "B", "C", "D"),
+                  label_size = 9)
+
+# Good. I'll fix alignment in AI
 ```
+
+# Figure 6. Boxplots
+
+```{r}
+rs_sites_4p %>%
+  mutate(is_break = ifelse(mean_breaks == 0, "no break", "break")) %>%
+  pivot_longer(c(tree_density, loreys_height, basal_area, agb), names_to = "forest_str", values_to = "value") %>%
+  ggplot(aes(x= is_break, y = value)) +
+  geom_boxplot() +
+  stat_compare_means(method = "t.test",
+                     aes(label = ..p.signif..)) +
+  theme_bw() +
+  facet_wrap(~forest_str,
+             scales = "free",
+             ncol = 4)
+  
+load("output/plots_cf_rs.RData")  
+
+figure6 <- plots_cf_rs %>%
+  mutate("log AGB" = log1p(agb_plot_ha),
+         "AGB" = as.numeric(agb_plot_ha),
+         "Basal area" = as.numeric(basal_area_ha),
+         "Lorey's height" = as.numeric(loreys_height),
+         "Tree density" = as.numeric(tree_density)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  pivot_longer(c("log AGB", "Basal area", "Lorey's height", "Tree density"),
+               names_to = "forest_str",
+               values_to = "value") %>%
+  ggplot(aes(x= is_break, y = value)) +
+  geom_boxplot(fill = "gray80",
+               outlier.alpha = 0.5) +
+  stat_compare_means(method = "t.test",
+                     aes(label = ..p.signif..),
+                     label.x = 1.4) +
+  theme_bw() +
+  xlab(NULL) +
+  ylab(NULL) +
+  facet_wrap(~forest_str,
+             scales = "free",
+             ncol = 4)
+
+plots_cf_rs %>%
+  mutate("log AGB" = log1p(agb_plot_ha),
+         "AGB" = as.numeric(agb_plot_ha),
+         "Basal area" = as.numeric(basal_area_ha),
+         "Lorey's height" = as.numeric(loreys_height),
+         "Tree density" = as.numeric(tree_density)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  pivot_longer(c("log AGB", "Basal area", "Lorey's height", "Tree density"),
+               names_to = "forest_str",
+               values_to = "value") %>%
+  ggplot(aes(x= tree_density)) +
+  geom_density(aes(fill= is_break), alpha = 0.25)
+
+plots_cf_rs %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  group_by(is_break) %>%
+  summarize(td = n(),
+            td_mean = mean(tree_density))
+
+```
+
+# Figure 7. Age
 
