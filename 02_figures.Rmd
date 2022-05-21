@@ -613,7 +613,7 @@ figure7 <- plots_cf_rs %>%
              alpha = 0.50) +
   geom_smooth(method = "loess",
               color = "gray10",
-              span = 1,
+              span = 0.8,
               se = F) +
   theme_bw() +
   ylab(NULL) +
