@@ -605,21 +605,95 @@ figure7 <- plots_cf_rs %>%
          "Lorey's height" = as.numeric(loreys_height),
          "Tree density" = as.numeric(tree_density),
          "sqrt Tree density" = sqrt(tree_density)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 22, age)) %>%
   pivot_longer(c("log AGB", "Basal area", "Lorey's height", "Tree density"),
                names_to = "forest_str",
                values_to = "value") %>%
   ggplot(aes(x= age, y = value)) +
-  geom_point(color = "gray40",
+  geom_point(aes(color = is_break),
              alpha = 0.50) +
-  geom_smooth(method = "loess",
+  scale_color_manual(values = c("gray30", "gray85")) +
+  geom_smooth(method = "lm",
               color = "gray10",
-              span = 0.8,
               se = F) +
   theme_bw() +
   ylab(NULL) +
+  theme(legend.title = element_blank()) +
   labs(x = "Time since last disturbance (years)") +
   facet_wrap(~forest_str,
              scales = "free",
              ncol = 4)
+```
+
+# figure 7 in boxplot
+
+```{r}
+plots_cf_rs %>%
+  mutate("log AGB" = log1p(agb_plot_ha),
+         "AGB" = as.numeric(agb_plot_ha),
+         "Basal area" = as.numeric(basal_area_ha),
+         "Lorey's height" = as.numeric(loreys_height),
+         "Tree density" = as.numeric(tree_density),
+         "sqrt Tree density" = sqrt(tree_density)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 22, age)) %>%
+  mutate(age_category = ifelse(age_fixed > 0 & age_fixed < 10, "0-10",
+                               ifelse(age_fixed >= 10 & age_fixed < 20, "10-20",
+                                      ">20"))) %>%
+  pivot_longer(c("log AGB", "Basal area", "Lorey's height", "Tree density"),
+               names_to = "forest_str",
+               values_to = "value") %>%
+  ggplot(aes(x= factor(age_category,
+                       levels = c("0-10", "10-20", ">20"),
+                       ordered = TRUE),
+             y = value)) +
+  geom_boxplot(fill = "gray80",
+               outlier.alpha = 0.5) +
+  stat_compare_means(method = "anova",
+                     aes(label = ..p.signif..),
+                     label.x = 2) +
+  theme_bw() +
+  ylab(NULL) +
+  theme(legend.title = element_blank()) +
+  labs(x = "Age category") +
+  facet_wrap(~forest_str,
+             scales = "free",
+             ncol = 4)
+
+aov_df <- plots_cf_rs %>%
+  mutate(age_fixed = ifelse(number_breaks == 0, 22, age)) %>%
+  mutate(age_category = ifelse(age_fixed >= 0 & age_fixed < 10, "0-10",
+                               ifelse(age_fixed >= 10 & age_fixed < 20, "10-20",
+                                      ">20"))) %>%
+  select(age_category, agb_plot_ha, tree_density, basal_area_ha, loreys_height)
+
+aov_df %>%
+  group_by(age_category) %>%
+  ggplot(aes(x = basal_area_ha)) +
+  geom_histogram(aes(fill = age_category))
+
+#  anova_test()
+
+# BA anova:
+aov_ba <- aov(aov_df$basal_area_ha ~ aov_df$age_category, data = aov_df)
+summary(aov_ba)
+TukeyHSD(aov_ba)
+
+# log AGB anova
+aov_agb <- aov(log1p(agb_plot_ha) ~ age_category, data = aov_df)
+summary(aov_agb)
+TukeyHSD(aov_agb)
+
+# Lorey's height
+aov_lh <- aov(loreys_height ~ age_category, data = aov_df)
+summary(aov_lh)
+TukeyHSD(aov_lh)
+
+# Tree density
+aov_td <- aov(tree_density ~ age_category, data = aov_df)
+summary(aov_td)
+TukeyHSD(aov_td)
+
 ```
 

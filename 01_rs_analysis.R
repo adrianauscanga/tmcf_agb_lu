@@ -1571,3 +1571,25 @@ sites_cf_rs %>%
 # 
 # Frontiers in Biogeo
 # Frontiers in Ecology 
+
+plots_cf_rs %>%
+  select(ndvi_sd_ts, ndvi_annual_sd)
+
+x <- c(5,9,1,3,0,2,6,9)
+y <- c(0,4,7,2,9,7,5,0)
+z <- c(9,2,8,4,7,8,3,7)
+
+mean(x)
+mean(y)
+mean(z)
+
+s <- c(x,y,z)
+
+mean(s)
+mean(c(mean(x),mean(y),mean(z)))
+
+sd(s)
+sd(c(sd(x),sd(y),sd(z)))
+
+min(s)
+mean(c(min(x), min(y), min(z)))
