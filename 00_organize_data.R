@@ -203,6 +203,7 @@ ndvi_l7 <- ndvi_l7 %>%
             ndvi = as.numeric(X5))
 
 head(ndvi_l7)
+tail(ndvi_l7)
 
 ndvi_l7 <- ndvi_l7 %>%
   separate(scene, into = c("landsat", "row_path", "date"), sep = "_", remove = TRUE) %>%
@@ -675,3 +676,18 @@ lapply(names(time_series_tps), function(x){
 # 
 # load("input/FI/trees_cf4.RData")
 # head(trees_cf)
+
+
+a <- ndvi_l5 %>%
+  filter(date > "1992-12-12") %>%
+  group_by(plot_id) %>%
+  summarize(length_l5 = n())
+
+b <- ndvi_l7 %>%
+  group_by(plot_id) %>%
+  summarize(length_l7 = n())
+
+c <- left_join(a, b) %>%
+  mutate(length = length_l5 + length_l7)
+
+mean(c$length)

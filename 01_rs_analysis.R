@@ -1560,13 +1560,101 @@ sites_cf_rs %>%
   #scale_x_log10() +
   geom_smooth(method = "lm")
 
+
+# .................... ----------------------------------------------------
+
+
+# Summary Stats -----------------------------------------------------------
+
+# Time series
+
+time_series_dc %>%
+  group_by(plot_id) %>%
+  summarize(ts_length = n()) %>%
+  mutate(mean_ts_l = mean(ts_length),
+         sd = sd(ts_length),
+         max = max(ts_length),
+         min = min(ts_length))
+
+time_series_dc %>%
+  mutate(month = month(date)) %>%
+  mutate(season = ifelse(month > 4 & month < 11,
+                         "rainy", "dry")) %>%
+  group_by(year, season) %>%
+  summarize(obs= n()) %>%
+  pivot_wider(names_from= season, values_from = obs) %>%
+  filter(year > 2002)
+
+time_series_dc %>%
+  mutate(month = month(date)) %>%
+  mutate(season = ifelse(month > 4 & month < 11,
+                         "rainy", "dry")) %>%
+  group_by(year, season, plot_id) %>%
+  summarize(obs= n()) %>%
+  group_by(year, season) %>%
+  summarize(m = mean(obs),
+            sd = sd(obs)) %>%
+  pivot_wider(names_from= season, values_from = c("m", "sd")) %>%
+  filter(year > 2002)
+
+time_series_dc %>%
+  group_by(plot_id) %>%
+  summarize(ts_length = n(),
+            ndvi_min = min(ndvi),
+            ndvi_mean = mean(ndvi),
+            ndvi_max = max(ndvi),
+            ndwi_min = min(ndwi),
+            ndwi_mean = mean(ndwi),
+            ndwi_max = max(ndwi)) %>%
+  mutate(mean_ts_l = mean(ts_length),
+       max = max(ts_length),
+       min = min(ts_length),
+       ndvi_min = min(ndvi_min),
+       ndvi_mean = mean(ndvi_mean),
+       ndvi_max = max(ndvi_max),
+       ndwi_min = min(ndwi_min),
+       ndwi_mean = mean(ndwi_mean),
+       ndwi_max = max(ndwi_max)) %>%
+  select(mean_ts_l, max, min,ndvi_min, ndvi_mean, ndvi_max, ndwi_min, ndwi_mean, ndwi_max)
+
+ 
+# Plots
+
+plots_cf_rs %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  group_by(is_break) %>%
+  summarize(counts = n(),
+            min = min(ndwi_annual_min),
+            max = max(ndwi_annual_min),
+            mean = mean(ndwi_annual_min),
+            sd = sd(ndwi_annual_min))
+
+plots_cf_rs %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  select(plot_id, is_break) %>%
+  left_join(time_series_dc) %>%
+  group_by(plot_id, is_break, year) %>%
+  summarize(l = n()) %>%
+  group_by(is_break) %>%
+  summarize(count = n(),
+            min = min(l),
+            mean = mean(l),
+            sd = sd(l),
+            max = max(l))
+
+# Sites
+
+sd(rs_sites_4p$ndwi_annual_min)
+  
+  
+# Notes -------------------------------------------------------------------
+
+
 # Bart: seasonal variation -- make month/year plot
 
 # histogram of redisuals
 # 
-# check what's happening with ouliers
-# 
-# Models are using ~160 rows--fix it!!!
+# check what's happening with outliers
 # 
 # 
 # Frontiers in Biogeo
