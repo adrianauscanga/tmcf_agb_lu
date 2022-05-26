@@ -1642,6 +1642,17 @@ plots_cf_rs %>%
             sd = sd(l),
             max = max(l))
 
+plots_cf_rs %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  mutate(is_unexpected = ifelse(age > 15 &
+                                number_breaks == 0 &
+                                agb_plot_ha < 100, "unexpected", "normal")) %>%
+  filter(is_unexpected == "unexpected") %>%
+  ggplot(aes(x = agb_plot_ha, y = ndvi_annual_sd)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+
 # Sites
 
 sd(rs_sites_4p$ndwi_annual_min)
