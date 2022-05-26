@@ -13,6 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Load packages for making figures:
+
+library(tidyverse)
+library(lubridate)
 library(ggplot2)
 library(ggpubr)
 library(cowplot)
@@ -26,6 +29,31 @@ library(ggsignif)
 
 ```{r}
 # load p66139_2 data set
+p66139_2 <- read_csv("output/ts_plots/66139_2.csv")
+
+
+annual <- p66139_2 %>%
+  arrange(sat_time) %>%
+  mutate(year = year(date)) %>%
+  group_by(year) %>%
+  summarize(sat_time = as.numeric(sat_time),
+            time1= paste0(year,"-01-01"),
+            time2 = paste0(year+1,"-01-01"),
+            ndvi_annual_sd = sd(ndvi),
+            ndvi_annual_mean = mean(ndvi),
+            ndvi_sd_1 = ndvi_annual_mean - ndvi_annual_sd,
+            ndvi_sd_2 = ndvi_annual_mean + ndvi_annual_sd,
+            ndvi_annual_min = min(ndvi),
+            is_min = ifelse(ndvi == ndvi_annual_min, "min", NA)) %>%
+  mutate(time1 = as_date(time1),
+         time2 = as_date(time2))
+
+p66139_2 <- p66139_2 %>%
+  left_join(annual, by = "sat_time")
+
+mean(p66139_2$ndvi)
+sd(p66139_2$ndvi)
+min(p66139_2$ndvi)
 ```
 
 
@@ -80,7 +108,7 @@ p66139_2 %>%
   mutate(year = year(date),
          date = as_date(date),
          is_min = ifelse(is.na(is_min), "no min", "min")) %>%
-  filter(year> 2017) %>%
+  filter(date > as.numeric(p66139_2$date[255])) %>%
   ggplot(aes(x= date, y = ndvi)) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
@@ -107,20 +135,20 @@ p66139_2 %>%
              color = "gray20",
              linetype = 2,
              size = 0.75) +
-    # mean NDVI (full time series)
-  geom_hline(yintercept = 0.7632497,
-             color = "#66c2a5",
-             size = 1,
-             linetype = 3) +
-    # NDVI sd (full time series)
-  geom_hline(aes(yintercept= 0.7632497 + 0.08261055),
-                 color = "#66c2a5",
-                 size = 0.5,
-                 linetype = 3) +
-  geom_hline(aes(yintercept= 0.7632497 - 0.08261055),
-                 color = "#66c2a5",
-                 size = 0.5,
-                 linetype = 3) +
+  #   # mean NDVI (full time series)
+  # geom_hline(yintercept = 0.7632497,
+  #            color = "#66c2a5",
+  #            size = 1,
+  #            linetype = 3) +
+  #   # NDVI sd (full time series)
+  # geom_hline(aes(yintercept= 0.7632497 + 0.08261055),
+  #                color = "#66c2a5",
+  #                size = 0.5,
+  #                linetype = 3) +
+  # geom_hline(aes(yintercept= 0.7632497 - 0.08261055),
+  #                color = "#66c2a5",
+  #                size = 0.5,
+  #                linetype = 3) +
   # landsat images
   geom_point(aes(x= p66139_2$date[258],
                  y = p66139_2$ndvi[258]),
@@ -173,35 +201,14 @@ p66139_2 %>%
 #aug 27, may 18, april 20, feb 15
 #,260,263,265)]
 # ,260,263,265)])
+
 ```
 
 
 # Figure 4. Variables
 ```{r}
-p66139_2 <- read_csv("output/ts_plots/66139_2.csv")
 
-annual <- p66139_2 %>%
-  arrange(sat_time) %>%
-  mutate(year = year(date)) %>%
-  group_by(year) %>%
-  summarize(sat_time = as.numeric(sat_time),
-            time1= paste0(year,"-01-01"),
-            time2 = paste0(year+1,"-01-01"),
-            ndvi_annual_sd = sd(ndvi),
-            ndvi_annual_mean = mean(ndvi),
-            ndvi_sd_1 = ndvi_annual_mean - ndvi_annual_sd,
-            ndvi_sd_2 = ndvi_annual_mean + ndvi_annual_sd,
-            ndvi_annual_min = min(ndvi),
-            is_min = ifelse(ndvi == ndvi_annual_min, "min", NA)) %>%
-  mutate(time1 = as_date(time1),
-         time2 = as_date(time2))
 
-p66139_2 <- p66139_2 %>%
-  left_join(annual, by = "sat_time")
-
-mean(p66139_2$ndvi)
-sd(p66139_2$ndvi)
-min(p66139_2$ndvi)
 ```
 
 Panel A:
@@ -263,11 +270,6 @@ p66139_2 %>%
   scale_shape_manual(values = c(25,16)) +
   scale_fill_manual(values = c("#fc8d62", "gray80")) +
   scale_color_manual(values = c("#fc8d62", "gray80")) +
-  # breaks
-  geom_vline(xintercept = as.numeric(p66139_2$date[c(71, 119, 260)]),
-             color = "gray20",
-             linetype = 2,
-             size = 0.75) +
   # data collection date
   geom_vline(xintercept = as.numeric(p66139_2$date[203]),
              color = "gray60",
@@ -290,7 +292,7 @@ p66139_2 %>%
   # min ndvi value
   geom_point(aes(x= p66139_2$date[73], y = 0.2649842),
              shape = 6,
-             size= 3,
+             size= 4,
              color = "#fc8d62") +
   # age since last disturbance
    annotate("segment",
@@ -301,9 +303,21 @@ p66139_2 %>%
             color = "#8da0cb",
             size = 0.75,
             arrow = arrow(ends = "both", length = unit(.15,"cm"))) +
+  # breaks
+  geom_vline(xintercept = as.numeric(p66139_2$date[c(71, 119, 260)]),
+             color = "gray20",
+             linetype = 2,
+             size = 0.75) +
   # box for panel B
   geom_rect(aes(xmin = p66139_2$time1[1]-30,
                 xmax = p66139_2$time1[43]+30,
+                ymin = 0.55, ymax = 0.9),
+            fill = NA,
+            color = "gray25",
+            size = 0.75) +
+  # box for panel C
+  geom_rect(aes(xmin = p66139_2$date[255],
+                xmax = p66139_2$date[270],
                 ymin = 0.55, ymax = 0.9),
             fill = NA,
             color = "gray25",

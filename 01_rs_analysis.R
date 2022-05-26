@@ -1642,6 +1642,8 @@ plots_cf_rs %>%
             sd = sd(l),
             max = max(l))
 
+
+
 plots_cf_rs %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
   mutate(is_unexpected = ifelse(age > 15 &
@@ -1657,6 +1659,50 @@ plots_cf_rs %>%
 
 sd(rs_sites_4p$ndwi_annual_min)
   
+
+# .................... ----------------------------------------------------
+
+
+# Seasonal variation ------------------------------------------------------
+
+s <- time_series %>%
+  mutate(month = month(date)) %>%
+  mutate(season = ifelse(month == 1 | month == 2 | month == 3, "winter",
+                         ifelse(month == 4 | month == 5 | month == 6, "spring",
+                                ifelse(month == 7 | month == 8 | month == 9, "summer",
+                                       "fall")))) 
+
+a <- aov(s$ndvi ~ s$season)
+
+TukeyHSD(a)
+  
+time_series %>%
+  mutate(month = month(date)) %>%
+  mutate(season = ifelse(month == 1 | month == 2 | month == 3, "winter",
+                         ifelse(month == 4 | month == 5 | month == 6, "spring",
+                                ifelse(month == 7 | month == 8 | month == 9, "summer",
+                                       "fall")))) %>%
+  ggplot(aes(x= month, y = ndvi)) +
+  geom_point(aes(color = season)) 
+
+time_series %>%
+  mutate(month = month(date)) %>%
+  mutate(season = ifelse(month == 1 | month == 2 | month == 3, "winter",
+                         ifelse(month == 4 | month == 5 | month == 6, "spring",
+                                ifelse(month == 7 | month == 8 | month == 9, "summer",
+                                       "fall")))) %>%
+  ggplot(aes(x= season, y = ndvi)) +
+  geom_boxplot() +
+  stat_compare_means(method = "anova")
+
+time_series %>%
+  mutate(month = month(date)) %>%
+  mutate(season = ifelse(month > 4 & month < 11,
+                         "rainy", "dry")) %>%
+  ggplot(aes(x = season, y = ndvi)) +
+  geom_boxplot() +
+  stat_compare_means(method = "t.test",
+                     label.x = 1.4)
   
 # Notes -------------------------------------------------------------------
 
