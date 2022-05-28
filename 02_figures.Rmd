@@ -633,11 +633,22 @@ figure7 <- plots_cf_rs %>%
               se = F) +
   theme_bw() +
   ylab(NULL) +
+  stat_regline_equation(aes(label = ..adj.rr.label..),
+                        size = 3,
+                        label.y.npc = 0.97) +
   theme(legend.title = element_blank()) +
   labs(x = "Time since last disturbance (years)") +
   facet_wrap(~forest_str,
              scales = "free",
              ncol = 4)
+
+# BA p < 0.05 adj-R2 = 0.09
+# AGB p < 0.05 adj-R2 = 0.13
+# Lorey's height p < 0.05 adj-R2 = 0.08
+# Tree density p < 0.002 adj-R2= 0.02
+
+
+summary(lm(plots_cf_rs$tree_density ~ plots_cf_rs$age))
 ```
 
 # figure 7 in boxplot
