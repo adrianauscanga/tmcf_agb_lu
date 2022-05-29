@@ -1210,6 +1210,9 @@ rs_sites_4p <- sites_cf %>%
 save(rs_sites_4p, file = "output/rs_sites_4p.RData")
 
 
+# Multiple Linear Regression Models ---------------------------------------
+
+
 # Models
 
 library(leaps)
@@ -1662,6 +1665,31 @@ sd(rs_sites_4p$ndwi_annual_min)
 
 # .................... ----------------------------------------------------
 
+
+# T-tests -----------------------------------------------------------------
+
+library(rstatix)
+
+plots_cf_rs %>%
+  mutate(log_agb = log1p(agb_plot_ha)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  #group_by(is_break) %>%
+  t_test(loreys_height ~ is_break)
+  
+
+# Linear regressions TSLD -------------------------------------------------
+
+b <- plots_cf_rs %>%
+  mutate(log_agb = log1p(agb_plot_ha)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  dplyr::filter(is_break == "break")
+
+nb <- plots_cf_rs %>%
+  mutate(log_agb = log1p(agb_plot_ha)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  dplyr::filter(is_break == "no break")
+  
+summary(lm(nb$tree_density ~ nb$age))
 
 # Seasonal variation ------------------------------------------------------
 
