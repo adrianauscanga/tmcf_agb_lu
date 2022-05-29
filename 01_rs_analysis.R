@@ -1337,7 +1337,7 @@ qqline(lm_lh_t$residuals)
 
 # LM tree density
 
-ms <- regsubsets(tree_density ~ altitude + slope_gee + min_age + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
+ms <- regsubsets(sqrt(tree_density) ~ altitude + slope_gee + min_age + mean_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
 
 ms_sum <- summary(ms)
@@ -1689,7 +1689,20 @@ nb <- plots_cf_rs %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
   dplyr::filter(is_break == "no break")
   
-summary(lm(nb$tree_density ~ nb$age))
+lm <- lm(plots_cf_rs$tree_density ~ plots_cf_rs$age)
+summary(lm)
+qqnorm(lm$residuals)
+qqline(lm$residuals)
+hist(lm$residuals)
+shapiro.test(lm$residuals)
+#transformations:
+hist(log1p(lm$residuals))
+hist(log(lm$residuals))
+hist(sqrt(lm$residuals))
+hist((lm$residuals)^(1/3))
+
+lm <- lm(sqrt(plots_cf_rs$loreys_height) ~ plots_cf_rs$age)
+summary(lm)
 
 # Seasonal variation ------------------------------------------------------
 
