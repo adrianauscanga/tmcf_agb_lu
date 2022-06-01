@@ -559,13 +559,16 @@ rs_sites_4p %>%
 load("output/plots_cf_rs.RData")  
 
 figure6b <- plots_cf_rs %>%
-  mutate("log AGB" = log10(agb_plot_ha+1),
+  mutate("log AGB" = log1p(agb_plot_ha),
          "AGB" = as.numeric(agb_plot_ha),
          "Basal area" = as.numeric(basal_area_ha),
+         "sqrt Basal area" = sqrt(basal_area_ha),
+         "sqrt Lorey's height" = sqrt(loreys_height),
          "Lorey's height" = as.numeric(loreys_height),
-         "Tree density" = as.numeric(tree_density)) %>%
+         "Tree density" = as.numeric(tree_density),
+         "log Tree density" = log1p(tree_density)) %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
-  pivot_longer(c("log AGB", "Basal area", "Lorey's height", "Tree density"),
+  pivot_longer(c("log AGB", "sqrt Basal area", "sqrt Lorey's height", "log Tree density"),
                names_to = "forest_str",
                values_to = "value") %>%
   ggplot(aes(x= is_break, y = value)) +
