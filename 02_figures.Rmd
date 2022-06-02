@@ -610,15 +610,16 @@ figure6b <- plots_cf_rs %>%
          "Tree density" = as.numeric(tree_density),
          "log Tree density" = log1p(tree_density)) %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
-  pivot_longer(c("log AGB", "sqrt Basal area", "sqrt Lorey's height", "log Tree density"),
+  pivot_longer(c("AGB", "Basal area", "Lorey's height", "Tree density"),
                names_to = "forest_str",
                values_to = "value") %>%
   ggplot(aes(x= is_break, y = value)) +
   geom_boxplot(fill = "gray80",
                outlier.alpha = 0.5) +
-  stat_compare_means(method = "t.test",
-                     aes(label = ..p.signif..),
-                     label.x = 1.4) +
+  # stat_compare_means(method = "t.test",
+  #                    aes(label = ..p.signif..),
+  #                    label.x = 1.4,
+  #                    label.y = 1) +
   theme_bw() +
   xlab(NULL) +
   ylab(NULL) +
@@ -626,11 +627,14 @@ figure6b <- plots_cf_rs %>%
              scales = "free",
              ncol = 4)
 
-figure6b + facetted_pos_scales(
-  y = list(
-    forest_str == "AGB" ~ scale_y_continuous(trans = "log10")
+figure6b <- figure6b + facetted_pos_scales(
+    y = list(
+    forest_str == "AGB" ~ scale_y_continuous(trans = "log10"),
+    forest_str == "Basal area" ~ scale_y_continuous(trans = "sqrt"),
+    forest_str == "Lorey's height" ~ scale_y_continuous(trans = "sqrt"),
+    forest_str == "Tree density" ~ scale_y_continuous(trans = "sqrt")
   )
-)
+) 
 
 plots_cf_rs %>%
   mutate("log AGB" = log1p(agb_plot_ha),
@@ -650,6 +654,46 @@ plots_cf_rs %>%
   group_by(is_break) %>%
   summarize(td = n(),
             td_mean = mean(tree_density))
+
+figure6 <- plots_cf_rs %>%
+  mutate(AGB = log1p(agb_plot_ha),
+         #"AGB" = as.numeric(agb_plot_ha),
+         #"Basal area" = as.numeric(basal_area_ha),
+         "Basal area" = sqrt(basal_area_ha),
+         "Lorey's height" = sqrt(loreys_height),
+         #"Lorey's height" = as.numeric(loreys_height),
+         #"Tree density" = as.numeric(tree_density),
+         "Tree density" = sqrt(tree_density)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  pivot_longer(c(AGB, "Basal area", "Lorey's height", "Tree density"),
+               names_to = "forest_str",
+               values_to = "value") %>%
+  ggplot(aes(x= is_break, y = value)) +
+  geom_boxplot(fill = "gray80",
+               outlier.alpha = 0.5) +
+  stat_compare_means(method = "t.test",
+                     aes(label = ..p.signif..),
+                     label.x = 1.4,
+                     label.y.npc = "top") +
+  theme_bw() +
+  xlab(NULL) +
+  ylab(NULL) +
+  facet_wrap(~forest_str,
+             scales = "free",
+             ncol = 4) 
+
+figure6<- figure6 + facetted_pos_scales(
+    y = list(
+    forest_str == "AGB" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
+                                             labels = c("1", "10", "100", "200", "400","600", "800")),
+    forest_str == "Basal area" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+                                                    labels = c("0", "5", "10", "20", "40", "60", "80")),
+    forest_str == "Lorey's height" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
+                                                        labels = c("0", "5", "10", "15", "20", "25", "30")),
+    forest_str == "Tree density" ~ scale_y_continuous(breaks = c(0, 10, 22.36068, 31.62278, 38.72983, 44.72136, 50),
+                                                      labels = c("0", "100", "500", "1000", "1500", "2000", "2500"))
+  )
+)
 
 ```
 
