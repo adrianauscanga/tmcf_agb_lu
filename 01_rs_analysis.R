@@ -1219,7 +1219,7 @@ library(leaps)
 
 # LM basal area
 
-ms <- regsubsets(basal_area ~ altitude + slope_gee + mean_age + min_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
+ms <- regsubsets(sqrt(basal_area) ~ altitude + slope_gee + mean_age + min_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
 
 ms_sum <- summary(ms)
@@ -1248,7 +1248,7 @@ bc<- boxcox(lm_ba)
 # y^lambda-1)/lambda if lambda != 0
 
 
-lm_ba_t <- lm(((basal_area^lambda-1)/lambda) ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
+lm_ba_t <- lm(sqrt(basal_area) ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
 summary(lm_ba_t)
 plot(lm_ba_t)
 
@@ -1262,18 +1262,29 @@ qqnorm(lm_ba$residuals)
 qqline(lm_ba$residuals)
 
 #Q-Q plot for Box-Cox transformed model
-qqnorm(lm_ba_t2$residuals)
-qqline(lm_ba_t2$residuals)
+qqnorm(lm_ba_t$residuals)
+qqline(lm_ba_t$residuals)
 
 hist(((rs_sites_4p$basal_area)^lambda-1)/lambda)
 hist((rs_sites_4p$basal_area)^(1/3), breaks = 8)
+
 hist(rs_sites_4p$basal_area)
+hist(sqrt(rs_sites_4p$basal_area), breaks = 15)
+shapiro.test(rs_sites_4p$basal_area)
+shapiro.test(sqrt(rs_sites_4p$basal_area))
+
+hist(plots_cf_rs$basal_area_ha)
+hist(sqrt(plots_cf_rs$basal_area_ha))
+
+shapiro.test(plots_cf_rs$basal_area_ha)
+shapiro.test(sqrt(plots_cf_rs$basal_area_ha))
+
 hist(sqrt(rs_sites_4p$basal_area))
-hist(lm_ba$residuals)
+hist(lm_ba$residuals, breaks = 10)
 hist((lm_ba$residuals)^(1/3))
 hist(sqrt(lm_ba$residuals))
 
-shapiro.test(lm_ba$residuals) #W = 0.96834, p-value = 0.3334     
+shapiro.test(lm_ba_t$residuals) #W = 0.96834, p-value = 0.3334     
 shapiro.test(((rs_sites_4p$basal_area)^lambda-1)/lambda)
 shapiro.test((rs_sites_4p$basal_area)^(1/3)) # Not perfect but better
 shapiro.test(rs_sites_4p$basal_area)
@@ -1689,20 +1700,29 @@ nb <- plots_cf_rs %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
   dplyr::filter(is_break == "no break")
   
-lm <- lm(plots_cf_rs$tree_density ~ plots_cf_rs$age)
+lm <- lm(b$log_agb ~ b$age)
 summary(lm)
+plot(lm)
+
 qqnorm(lm$residuals)
 qqline(lm$residuals)
 hist(lm$residuals)
 shapiro.test(lm$residuals)
+
 #transformations:
 hist(log1p(lm$residuals))
 hist(log(lm$residuals))
 hist(sqrt(lm$residuals))
 hist((lm$residuals)^(1/3))
+shapiro.test((lm$residuals)^(1/3))
 
-lm <- lm(sqrt(plots_cf_rs$loreys_height) ~ plots_cf_rs$age)
-summary(lm)
+lm_t <- lm(((plots_cf_rs$loreys_height)^(1/3)) ~ plots_cf_rs$age)
+summary(lm_t)
+plot(lm_t)
+hist(lm_t$residuals)
+shapiro.test(lm_t$residuals)
+
+#plot(lm$residuals)^(1/3)) ~ plots_cf_rs$age)
 
 # Seasonal variation ------------------------------------------------------
 
@@ -1757,6 +1777,11 @@ time_series %>%
 # 
 # Frontiers in Biogeo
 # Frontiers in Ecology 
+
+# sqrt basal area
+# homogeneity of variance test
+# min time sld
+# log 1p (tree density)
 
 plots_cf_rs %>%
   select(ndvi_sd_ts, ndvi_annual_sd)

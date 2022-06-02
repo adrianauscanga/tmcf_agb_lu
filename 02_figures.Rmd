@@ -499,7 +499,7 @@ f5_td <- rs_sites_4p %>%
 
 # AGB
 
-figure5 <- rs_sites_4p %>%
+figure5_t <- rs_sites_4p %>%
   mutate("Elevation (m asl)" = as.numeric(altitude),
          "NDVIa S.D." = as.numeric(ndvi_annual_sd),
          "NDVI S.D." = as.numeric(ndvi_sd_ts),
@@ -509,11 +509,10 @@ figure5 <- rs_sites_4p %>%
                names_to = "covariates",
                values_to = "value") %>%
   mutate("log AGB" = log1p(agb),
-         "AGB" = agb + 1,
-         "Basal area" = as.numeric(basal_area),
-         "Lorey's height" = as.numeric(loreys_height),
-         "Tree density" = as.numeric(tree_density)) %>%
-  pivot_longer(c("AGB", "Basal area", "Lorey's height", "Tree density"),
+         "sqrt Basal area" = sqrt(basal_area),
+         "sqrt Lorey's height" = sqrt(loreys_height),
+         "log Tree density" = log1p(tree_density)) %>%
+  pivot_longer(c("log AGB", "sqrt Basal area", "sqrt Lorey's height", "log Tree density"),
                names_to = "forest_str",
                values_to = "f_str_values") %>%
   filter(covariates == "Elevation (m asl)" | 
@@ -534,11 +533,54 @@ figure5 <- rs_sites_4p %>%
   xlab(NULL) +
   ylab(NULL) 
 
-figure5 + facetted_pos_scales(
+figure5 <- rs_sites_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDVI S.D." = as.numeric(ndvi_sd_ts),
+         "NDWIa min" = as.numeric(ndwi_annual_min),
+         "Slope (degrees)" = as.numeric(slope_gee)) %>%
+  pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ),
+               names_to = "covariates",
+               values_to = "value") %>%
+  mutate("AGB" = as.numeric(agb),
+  "Basal area" = as.numeric(basal_area),
+  "Lorey's height" = as.numeric(loreys_height),
+  "Tree density" = as.numeric(tree_density)) %>%
+  pivot_longer(c("AGB", "Basal area", "Lorey's height", "Tree density"),
+               names_to = "forest_str",
+               values_to = "f_str_values") %>%
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "NDVIa S.D." |
+         covariates == "NDVI S.D." |
+         covariates == "NDWIa min" |
+         covariates == "Slope (degrees)") %>%
+  ggplot(aes(value, f_str_values)) +
+  geom_point(color = "gray30",
+             alpha= 0.75) +
+  # geom_smooth(method = "lm",
+  #             color = "gray10",
+  #             se=F) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 8)) +
+  facet_grid(forest_str ~ covariates,
+             scales = "free") +
+  xlab(NULL) +
+  ylab(NULL)
+
+library(ggh4x)
+
+figure5 <- figure5 + facetted_pos_scales(
   y = list(
-    forest_str == "AGB" ~ scale_y_continuous(trans = "log10")
+    forest_str == "AGB" ~ scale_y_continuous(trans = "log10"),
+    forest_str == "Basal area" ~ scale_y_continuous(trans = "sqrt"),
+    forest_str == "Lorey's height" ~ scale_y_continuous(trans = "sqrt"),
+    forest_str == "Tree density" ~ scale_y_continuous(trans = "sqrt")
   )
 )
+
+figure5 <- figure5 + geom_smooth(method = "lm",
+                                 se = F,
+                                 color = "gray10")
 ```
 
 # Figure 6. Boxplots
