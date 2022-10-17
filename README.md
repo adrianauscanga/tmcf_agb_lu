@@ -1,4 +1,7 @@
-# tmcf_agb_lu
+### tmcf_agb_lu
+
+# Incorporating small-scale forest disturbance in aboveground biomass estimates of tropical mountains
+
 Code for analyzing the effect of recent land use on forest structure and aboveground biomass (AGB) in Tropical Montane Cloud Forest using Landsat time series and forest inventory data.
 This repository contains:
 * code for organizing raw data from the input directory and saved in the output directory
