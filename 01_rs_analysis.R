@@ -1,4 +1,4 @@
-#---------------------- 01. Remote Sensing Analisis ------------------------
+#---------------------- 01. Remote Sensing Analysis ------------------------
 #
 # 
 #
@@ -804,7 +804,7 @@ save(tp_breaks, file = "output/tp_breaks.RData")
 
 # After validating breaks with training points and actual plots, I found a threshold of [0.15] (absolute value)
 # Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05, that's why 
-# it's important to to include positive breaks
+# it's important to include positive breaks
 
 load("output/plots_breaks_dummy.RData")
 
