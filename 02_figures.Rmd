@@ -21,7 +21,7 @@ library(ggpubr)
 library(cowplot)
 library(rlang)
 library(ggsignif)
-
+library(ggh4x)
 
 ```
 
@@ -581,6 +581,57 @@ figure5 <- figure5 + facetted_pos_scales(
 figure5 <- figure5 + geom_smooth(method = "lm",
                                  se = F,
                                  color = "gray10")
+
+figure5 <- rs_sites_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDVI S.D." = as.numeric(ndvi_sd_ts),
+         "NDWIa min" = as.numeric(ndwi_annual_min),
+         "Slope (degrees)" = as.numeric(slope_gee)) %>%
+  pivot_longer(c(-site, -no_plots, -tree_density, -loreys_height, -basal_area, -agb, -is_unexpected ),
+               names_to = "covariates",
+               values_to = "value") %>%
+  mutate("AGB (Mg/ha)" = log1p(agb),
+  "Basal area (m/ha)" = sqrt(basal_area),
+  "Lorey's height (m)" = sqrt(loreys_height),
+  "Tree density (tree/ha)" = sqrt(tree_density)) %>%
+  pivot_longer(c("AGB (Mg/ha)", "Basal area (m/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
+               names_to = "forest_str",
+               values_to = "f_str_values") %>%
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "NDVIa S.D." |
+         covariates == "NDVI S.D." |
+         covariates == "NDWIa min" |
+         covariates == "Slope (degrees)") %>%
+  ggplot(aes(value, f_str_values)) +
+  geom_point(color = "gray40",
+             alpha= 0.75,
+             size = 1.5) +
+   geom_smooth(method = "lm",
+               color = "gray10",
+               se=F) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 8)) +
+  facet_grid(forest_str ~ covariates,
+             scales = "free") +
+  xlab(NULL) +
+  ylab(NULL)
+
+library(ggh4x)
+
+
+figure5 <- figure5 + facetted_pos_scales(
+    y = list(
+    forest_str == "AGB (Mg/ha)" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
+                                             labels = c("0", "10", "100", "200", "400","600", "800")),
+    forest_str == "Basal area (m/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+                                                    labels = c("0", "5", "10", "20", "40", "60", "80")),
+    forest_str == "Lorey's height (m)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
+                                                        labels = c("0", "5", "10", "15", "20", "25", "30")),
+    forest_str == "Tree density (tree/ha)" ~ scale_y_continuous(breaks = c(0, 10, 22.36068, 31.62278, 38.72983, 44.72136, 50),
+                                                      labels = c("0", "100", "500", "1000", "1500", "2000", "2500"))
+  )
+)
 ```
 
 # Figure 6. Boxplots
@@ -598,7 +649,7 @@ rs_sites_4p %>%
              scales = "free",
              ncol = 4)
   
-load("output/plots_cf_rs.RData")  
+load("output/plots_cf_rs.RData")
 
 figure6b <- plots_cf_rs %>%
   mutate("log AGB" = log1p(agb_plot_ha),
@@ -655,17 +706,18 @@ plots_cf_rs %>%
   summarize(td = n(),
             td_mean = mean(tree_density))
 
+
 figure6 <- plots_cf_rs %>%
-  mutate(AGB = log1p(agb_plot_ha),
+  mutate("AGB (Mg/ha)" = log1p(agb_plot_ha),
          #"AGB" = as.numeric(agb_plot_ha),
          #"Basal area" = as.numeric(basal_area_ha),
-         "Basal area" = sqrt(basal_area_ha),
-         "Lorey's height" = sqrt(loreys_height),
+         "Basal area (m/ha)" = sqrt(basal_area_ha),
+         "Lorey's height (m)" = sqrt(loreys_height),
          #"Lorey's height" = as.numeric(loreys_height),
          #"Tree density" = as.numeric(tree_density),
-         "Tree density" = sqrt(tree_density)) %>%
+         "Tree density (tree/ha)" = sqrt(tree_density)) %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
-  pivot_longer(c(AGB, "Basal area", "Lorey's height", "Tree density"),
+  pivot_longer(c("AGB (Mg/ha)", "Basal area (m/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
                names_to = "forest_str",
                values_to = "value") %>%
   ggplot(aes(x= is_break, y = value)) +
@@ -684,13 +736,13 @@ figure6 <- plots_cf_rs %>%
 
 figure6<- figure6 + facetted_pos_scales(
     y = list(
-    forest_str == "AGB" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
+    forest_str == "AGB (Mg/ha)" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
                                              labels = c("1", "10", "100", "200", "400","600", "800")),
-    forest_str == "Basal area" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+    forest_str == "Basal area (m/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
                                                     labels = c("0", "5", "10", "20", "40", "60", "80")),
-    forest_str == "Lorey's height" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
+    forest_str == "Lorey's height (m)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
                                                         labels = c("0", "5", "10", "15", "20", "25", "30")),
-    forest_str == "Tree density" ~ scale_y_continuous(breaks = c(0, 10, 22.36068, 31.62278, 38.72983, 44.72136, 50),
+    forest_str == "Tree density (tree/ha)" ~ scale_y_continuous(breaks = c(0, 10, 22.36068, 31.62278, 38.72983, 44.72136, 50),
                                                       labels = c("0", "100", "500", "1000", "1500", "2000", "2500"))
   )
 )
@@ -739,6 +791,62 @@ figure7 <- plots_cf_rs %>%
 
 
 summary(lm(plots_cf_rs$tree_density ~ plots_cf_rs$age))
+
+figure7_db <- plots_cf_rs %>%
+  mutate("AGB (Mg/ha)" = log1p(agb_plot_ha),
+         "Basal area (m/ha)" = sqrt(basal_area_ha),
+         "Lorey's height (m)" = sqrt(loreys_height),
+         "Tree density (tree/ha)" = sqrt(tree_density)) %>%
+  mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
+  filter(is_break == "break")
+
+figure7 <- figure7_db %>%
+  pivot_longer(c("AGB (Mg/ha)", "Basal area (m/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
+               names_to = "forest_str",
+               values_to = "value") %>%
+  ggplot(aes(x= age, y = value)) +
+  geom_point(color = "gray70",
+             size = 1.5) +
+  geom_smooth(method = "lm",
+              color = "gray10",
+              se = F) +
+  theme_bw() +
+  ylab(NULL) +
+  # stat_regline_equation(aes(label = ..adj.rr.label..),
+  #                       size = 3,
+  #                       label.y.npc = 0.03,
+  #                       label.x.npc = 0.55) +
+  theme(legend.title = element_blank()) +
+  labs(x = "Time since last disturbance (years)") +
+  facet_wrap(~forest_str,
+             scales = "free",
+             ncol = 4)
+
+
+figure7 <- figure7 + facetted_pos_scales(
+    y = list(
+    forest_str == "AGB (Mg/ha)" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
+                                             labels = c("0", "10", "100", "200", "400","600", "800")),
+    forest_str == "Basal area (m/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+                                                    labels = c("0", "5", "10", "20", "40", "60", "80")),
+    forest_str == "Lorey's height (m)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
+                                                        labels = c("0", "5", "10", "15", "20", "25", "30")),
+    forest_str == "Tree density (tree/ha)" ~ scale_y_continuous(breaks = c(0, 10, 22.36068, 31.62278, 38.72983, 44.72136, 50),
+                                                      labels = c("0", "100", "500", "1000", "1500", "2000", "2500"))
+  )
+)
+
+
+# BA p < 0.05 adj-R2 = 0.09
+# AGB p < 0.05 adj-R2 = 0.13
+# Lorey's height p < 0.05 adj-R2 = 0.08
+# Tree density p < 0.002 adj-R2= 0.02
+
+
+summary(lm(figure7_db$AGB ~ figure7_db$age))
+summary(lm(figure7_db$`Basal area` ~ figure7_db$age))
+summary(lm(figure7_db$`Tree density` ~ figure7_db$age))
+summary(lm(figure7_db$`Lorey's height` ~ figure7_db$age))
 ```
 
 # figure 7 in boxplot
