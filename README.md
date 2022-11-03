@@ -8,4 +8,4 @@ This repository contains:
 * code for analyzing data stored in the output directory
 * code for reproducing figures in the manuscript
 
-Files in the input and output directory are too large and will not be uploaded to this repository, instead they'll be deposited in Dryad.
+Files in the input and output directory are deposited in Dryad.
