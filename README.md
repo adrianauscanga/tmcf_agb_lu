@@ -9,3 +9,5 @@ This repository contains:
 * code for reproducing figures in the manuscript
 
 Files in the input and output directory are deposited in Dryad.
+
+[![DOI](https://zenodo.org/badge/479808985.svg)](https://zenodo.org/badge/latestdoi/479808985)
