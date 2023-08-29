@@ -1048,7 +1048,7 @@ weirdplots <- plots_cf_rs %>%
 
 # Comparison of RS data ---------------------------------------------------
 
-rs <- plots_cf_rs[,c(1:2,27,28,30,34,42:84)]
+rs <- plots_cf_rs[,c(1:2,20, 22, 27,28,30,34,42:84)]
 
 rs_corr <- rs[,-1] %>%
   scale() %>%
@@ -1091,7 +1091,9 @@ rs_corr_matrix <- rs_corr %>%
 
 
 rs_short <- rs %>%
-  select(plot_id,
+  dplyr::select(plot_id,
+                altitude,
+                slope,
          tree_density,
          loreys_height,
          basal_area_ha,
@@ -1137,7 +1139,9 @@ biplot(rda(drop_na(rs_short[,-c(1:5)]), scale = T), display = 'species')
 # Shorter data set:
 
 rs_shorter <- rs_short %>%
-  select(plot_id,
+  dplyr::select(plot_id,
+                altitude,
+                slope,
          tree_density,
          loreys_height,
          basal_area_ha,
@@ -1204,11 +1208,10 @@ rs_sites_4p <- rs_sites %>%
 summary(lm(rs_sites_4p$ndwi_annual_min ~ rs_sites_4p$loreys_height))
 
 rs_sites_4p <- sites_cf %>%
-  select(altitude, slope_gee) %>%
+  dplyr::select(altitude, slope_gee) %>%
   right_join(rs_sites_4p)
 
 save(rs_sites_4p, file = "output/rs_sites_4p.RData")
-
 
 # Multiple Linear Regression Models ---------------------------------------
 
@@ -1217,7 +1220,7 @@ save(rs_sites_4p, file = "output/rs_sites_4p.RData")
 
 library(leaps)
 
-# LM basal area
+# LM basal area - site
 
 ms <- regsubsets(sqrt(basal_area) ~ altitude + slope_gee + mean_age + min_age + mean_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_sites_4p, nvmax = 9)
 summary(ms)
@@ -1288,6 +1291,26 @@ shapiro.test(lm_ba_t$residuals) #W = 0.96834, p-value = 0.3334
 shapiro.test(((rs_sites_4p$basal_area)^lambda-1)/lambda)
 shapiro.test((rs_sites_4p$basal_area)^(1/3)) # Not perfect but better
 shapiro.test(rs_sites_4p$basal_area)
+
+# LM basal area - plots
+
+ms_plots <- regsubsets(sqrt(basal_area_ha) ~ altitude + slope + age + number_breaks + ndvi_annual_sd + ndvi_sd_ts + ndvi_min_ts + ndwi_annual_min, data = rs_shorter, nvmax = 9)
+summary(ms_plots)
+
+ms_sum_plots <- summary(ms_plots)
+# Best model:
+data.frame(
+  Adj.R2 = (ms_sum_plots$adjr2),
+  CP = (ms_sum_plots$cp),
+  BIC = (ms_sum_plots$bic)
+)
+data.frame(
+  Adj.R2 = which.max(ms_sum_plots$adjr2),
+  CP = which.min(ms_sum_plots$cp),
+  BIC = which.min(ms_sum_plots$bic)
+)
+
+ms_sum_plots
 
 # LM tree height
 
