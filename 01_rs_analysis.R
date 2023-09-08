@@ -19,6 +19,10 @@ library(scales)
 library(leaps)
 library(asbio)
 library(MASS)
+library(lme4)
+library(stargazer)
+library(sjPlot)
+library(cAIC4)
 
 # Load individual plots
 # Make a loop to read all ts plots at once
@@ -1048,7 +1052,7 @@ weirdplots <- plots_cf_rs %>%
 
 # Comparison of RS data ---------------------------------------------------
 
-rs <- plots_cf_rs[,c(1:2,20, 22, 27,28,30,34,42:84)]
+rs <- plots_cf_rs[,c(1:2, 7, 20, 22, 27, 28, 30, 34, 42:84)]
 
 rs_corr <- rs[,-1] %>%
   scale() %>%
@@ -1092,6 +1096,7 @@ rs_corr_matrix <- rs_corr %>%
 
 rs_short <- rs %>%
   dplyr::select(plot_id,
+                site,
                 altitude,
                 slope,
          tree_density,
@@ -1140,6 +1145,7 @@ biplot(rda(drop_na(rs_short[,-c(1:5)]), scale = T), display = 'species')
 
 rs_shorter <- rs_short %>%
   dplyr::select(plot_id,
+                site,
                 altitude,
                 slope,
          tree_density,
@@ -1259,6 +1265,51 @@ plot(lm_ba_t)
 lm_ba_t2 <- lm((basal_area^(1/3)) ~ altitude + slope_gee + ndvi_annual_sd + ndvi_sd_ts + ndwi_annual_min, data = rs_sites_4p)
 summary(lm_ba_t2)
 plot(lm_ba_t2)
+
+## TEST: Multiple linear mixed model
+# Select sites with 4 plots
+list_sites <- plots_cf_rs %>%
+  group_by(site) %>%
+  summarize(no_plots = n()) %>%
+  filter(no_plots == 4)
+
+rs_shorter_4p <- list_sites %>%
+  left_join(rs_shorter)
+
+ms2 <- regsubsets((sqrt(basal_area_ha)) ~ scale(altitude) + scale(slope) + scale(number_breaks) + scale(ndvi_annual_sd) + scale(ndvi_sd_ts) + scale(ndvi_min_ts) + scale(ndwi_annual_min), data = rs_shorter, nvmax = 7)
+summary(ms2)
+
+ms_sum2 <- summary(ms2)
+# Best model:
+data.frame(
+  Adj.R2 = (ms_sum2$adjr2),
+  CP = (ms_sum2$cp),
+  BIC = (ms_sum2$bic)
+)
+data.frame(
+  Adj.R2 = which.max(ms_sum2$adjr2),
+  CP = which.min(ms_sum2$cp),
+  BIC = which.min(ms_sum2$bic)
+)
+
+ms_sum2
+
+lmer_ba <- lmer((sqrt(basal_area_ha)) ~ scale(altitude) + 
+                  scale(slope) + 
+                  #scale(ndvi_annual_sd) + 
+                  scale(ndvi_sd_ts) + 
+                  scale(ndwi_annual_min) + 
+                  (1|site), 
+                data = rs_shorter)
+summary(lmer_ba)
+stargazer(lmer_ba, type = "text", report = ("vc*p"))
+rsq.lmm(lmer_ba, adj= T)
+cAIC(lmer_ba)
+plot(lmer_ba)
+plot_model(lmer_ba, show.p = T, show.values = T)
+qqnorm(resid(lmer_ba))
+qqline(resid(lmer_ba))
+
 
 #Q-Q plot for original model
 qqnorm(lm_ba$residuals)
