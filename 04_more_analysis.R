@@ -13,6 +13,7 @@ library(lme4)
 library(stargazer)
 library(sjPlot)
 library(cAIC4)
+library(rsq)
 
 # Load data sets
 
@@ -1721,11 +1722,11 @@ rsq.lmm(lmer_ba_5d, adj= T)
 rsq.lmm(lmer_ba_6d, adj= T)
 rsq.lmm(lmer_ba_7, adj= T)
 
-summary(lmer_ba_3a)
+summary(lmer_ba_4a)
 
-cAIC(lmer_ba_3a)
-stargazer(lmer_ba_3a, type = "text", report = ("vc*p"))
-rsq.lmm(lmer_ba_5d, adj= T)
+cAIC(lmer_ba_4a)
+stargazer(lmer_ba_4a, type = "text", report = ("vc*p"))
+rsq.lmm(lmer_ba_4a, adj= T)
 plot(lmer_ba_3a)
 plot_model(lmer_ba_5d, show.p = T, show.values = T)
 qqnorm(resid(lmer_ba_3a))
@@ -2185,7 +2186,7 @@ lmer_th_3e <- lmer(sqrt(loreys_height) ~
                      #ndvi_annual_sd + 
                      #ndvi_sd_ts + 
                      #ndvi_min_ts + 
-                     ndwi_annual_min +
+                     scale(ndwi_annual_min) +
                      (1|site),
                    data = rs_shorter_4p)
 
@@ -3459,9 +3460,9 @@ rsq.lmm(lmer_th_7, adj= T)
 summary(lmer_th_3e) # Best model 
 summary(lmer_th_4d)
 
-cAIC(lmer_th_7)
-stargazer(lmer_th_7, type = "text", report = ("vc*p"))
-rsq.lmm(lmer_th_7, adj= T)
+cAIC(lmer_th_3e)
+stargazer(lmer_th_3e, type = "text", report = ("vc*p"))
+rsq.lmm(lmer_th_3e, adj= T)
 plot(lmer_th_3e)
 plot_model(lmer_th_3e, show.p = T, show.values = T)
 qqnorm(resid(lmer_th_3e))
@@ -4301,11 +4302,11 @@ lmer_td_3_cAIC %>%
 
 combn(c("altitude","slope","number_breaks", "ndvi_annual_sd","ndvi_sd_ts","ndvi_min_ts","ndwi_annual_min"), 4, simplify = T)
 
-lmer_td_4a <- lmer(log1p(agb_plot_ha) ~ 
+lmer_td_4a <- lmer(sqrt(tree_density) ~ 
                      scale(altitude) + 
                      scale(slope) + 
                      scale(number_breaks) + 
-                     ndvi_annual_sd + 
+                     scale(ndvi_annual_sd) + 
                      #ndvi_sd_ts + 
                      #ndvi_min_ts + 
                      #ndwi_annual_min +
@@ -5120,9 +5121,9 @@ rsq.lmm(lmer_td_7, adj= T)
 
 summary(lmer_td_4a)
 
-cAIC(lmer_td_7)
-stargazer(lmer_td_7, type = "text", report = ("vc*p"))
-rsq.lmm(lmer_td_7, adj= T)
+cAIC(lmer_td_4a)
+stargazer(lmer_td_4a, type = "text", report = ("vc*p"))
+rsq.lmm(lmer_td_4a, adj= T)
 plot(lmer_td_3a)
 plot_model(lmer_td_3a, show.p = T, show.values = T)
 qqnorm(resid(lmer_td_3a))
@@ -6781,9 +6782,9 @@ rsq.lmm(lmer_agb_7, adj= T)
 
 summary(lmer_agb_4a) # Best model
 
-cAIC(lmer_agb_7)
-stargazer(lmer_agb_7, type = "text", report = ("vc*p"))
-rsq.lmm(lmer_agb_7, adj= T)
+cAIC(lmer_agb_4a)
+stargazer(lmer_agb_4a, type = "text", report = ("vc*p"))
+rsq.lmm(lmer_agb_4a, adj= T)
 plot(lmer_agb_4a)
 plot_model(lmer_agb_4a, show.p = T, show.values = T)
 qqnorm(resid(lmer_agb_4a))
