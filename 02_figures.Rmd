@@ -634,6 +634,58 @@ figure5 <- figure5 + facetted_pos_scales(
 )
 
 ggsave("FIGURE5.png", figure5, width=18, height=14, units="cm", dpi = "print")
+
+## Figure 5 with plots
+
+figure5_plots <- rs_shorter_4p %>%
+  mutate("Elevation (m asl)" = as.numeric(altitude),
+         "Slope (degrees)" = as.numeric(slope),
+         "No. breaks" = as.numeric(number_breaks),
+         "NDVIa S.D." = as.numeric(ndvi_annual_sd),
+         "NDWIa min" = as.numeric(ndwi_annual_min)) %>%
+  pivot_longer(c(-site, -no_plots, -plot_id, -tree_density, -loreys_height, -basal_area_ha, -agb_plot_ha),
+               names_to = "covariates",
+               values_to = "value") %>%
+  mutate("AGB (Mg/ha)" = log1p(agb_plot_ha),
+         "Basal area (m^2/ha)" = sqrt(basal_area_ha),
+         "Lorey's height (m)" = sqrt(loreys_height),
+         "Tree density (tree/ha)" = sqrt(tree_density)) %>%
+  pivot_longer(c("AGB (Mg/ha)", "Basal area (m^2/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
+               names_to = "forest_str",
+               values_to = "f_str_values") %>%
+  filter(covariates == "Elevation (m asl)" | 
+         covariates == "Slope (degrees)" |
+         covariates == "No. breaks" |
+         covariates == "NDVIa S.D." |
+         covariates == "NDWIa min") %>%
+  ggplot(aes(value, f_str_values)) +
+  geom_point(color = "gray50",
+             alpha= 0.50,
+             size = 1.5) +
+   geom_smooth(method = "lm",
+               color = "gray10",
+               se=F) +
+  theme_bw() +
+  theme(axis.text = element_text(size = 8)) +
+  facet_grid(forest_str ~ covariates,
+             scales = "free") +
+  xlab(NULL) +
+  ylab(NULL)
+
+figure5_plots <- figure5_plots + facetted_pos_scales(
+    y = list(
+    forest_str == "AGB (Mg/ha)" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
+                                             labels = c("0", "10", "100", "200", "400","600", "800")),
+    forest_str == "Basal area (m^2/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+                                                    labels = c("0", "5", "10", "20", "40", "60", "80")),
+    forest_str == "Lorey's height (m)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
+                                                        labels = c("0", "5", "10", "15", "20", "25", "30")),
+    forest_str == "Tree density (tree/ha)" ~ scale_y_continuous(breaks = c(0, 10, 22.36068, 31.62278, 38.72983, 44.72136, 50),
+                                                      labels = c("0", "100", "500", "1000", "1500", "2000", "2500"))
+  )
+)
+
+ggsave("FIGURE5_revised.png", figure5_plots, width=18, height=14, units="cm", dpi = "print")
 ```
 
 # Figure 6. Boxplots
@@ -713,13 +765,13 @@ figure6 <- plots_cf_rs %>%
   mutate("AGB (Mg/ha)" = log1p(agb_plot_ha),
          #"AGB" = as.numeric(agb_plot_ha),
          #"Basal area" = as.numeric(basal_area_ha),
-         "Basal area (m/ha)" = sqrt(basal_area_ha),
+         "Basal area (m^2/ha)" = sqrt(basal_area_ha),
          "Lorey's height (m)" = sqrt(loreys_height),
          #"Lorey's height" = as.numeric(loreys_height),
          #"Tree density" = as.numeric(tree_density),
          "Tree density (tree/ha)" = sqrt(tree_density)) %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
-  pivot_longer(c("AGB (Mg/ha)", "Basal area (m/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
+  pivot_longer(c("AGB (Mg/ha)", "Basal area (m^2/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
                names_to = "forest_str",
                values_to = "value") %>%
   ggplot(aes(x= is_break, y = value)) +
@@ -740,7 +792,7 @@ figure6<- figure6 + facetted_pos_scales(
     y = list(
     forest_str == "AGB (Mg/ha)" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
                                              labels = c("1", "10", "100", "200", "400","600", "800")),
-    forest_str == "Basal area (m/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+    forest_str == "Basal area (m^2/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
                                                     labels = c("0", "5", "10", "20", "40", "60", "80")),
     forest_str == "Lorey's height (m)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
                                                         labels = c("0", "5", "10", "15", "20", "25", "30")),
@@ -749,7 +801,7 @@ figure6<- figure6 + facetted_pos_scales(
   )
 )
 
-ggsave("FIGURE3.png", figure6, width=16, height=12, units="cm", dpi = "print")
+ggsave("FIGURE3_revised.png", figure6, width=16, height=12, units="cm", dpi = "print")
 ```
 
 # Figure 7. Age
@@ -797,14 +849,14 @@ summary(lm(plots_cf_rs$tree_density ~ plots_cf_rs$age))
 
 figure7_db <- plots_cf_rs %>%
   mutate("AGB (Mg/ha)" = log1p(agb_plot_ha),
-         "Basal area (m/ha)" = sqrt(basal_area_ha),
+         "Basal area (m^2/ha)" = sqrt(basal_area_ha),
          "Lorey's height (m)" = sqrt(loreys_height),
          "Tree density (tree/ha)" = sqrt(tree_density)) %>%
   mutate(is_break = ifelse(number_breaks == 0, "no break", "break")) %>%
   filter(is_break == "break")
 
 figure7 <- figure7_db %>%
-  pivot_longer(c("AGB (Mg/ha)", "Basal area (m/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
+  pivot_longer(c("AGB (Mg/ha)", "Basal area (m^2/ha)", "Lorey's height (m)", "Tree density (tree/ha)"),
                names_to = "forest_str",
                values_to = "value") %>%
   ggplot(aes(x= age, y = value)) +
@@ -830,7 +882,7 @@ figure7 <- figure7 + facetted_pos_scales(
     y = list(
     forest_str == "AGB (Mg/ha)" ~ scale_y_continuous(breaks = c(0, 2.397895, 4.615121,5.303305, 5.993961,6.398595, 6.685861),
                                              labels = c("0", "10", "100", "200", "400","600", "800")),
-    forest_str == "Basal area (m/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
+    forest_str == "Basal area (m^2/ha)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 4.472136, 6.324555, 7.745967, 8.944272),
                                                     labels = c("0", "5", "10", "20", "40", "60", "80")),
     forest_str == "Lorey's height (m)" ~ scale_y_continuous(breaks = c(0, 2.236068, 3.162278, 3.872983, 4.472136, 5, 5.477226),
                                                         labels = c("0", "5", "10", "15", "20", "25", "30")),
@@ -839,7 +891,7 @@ figure7 <- figure7 + facetted_pos_scales(
   )
 )
 
-ggsave("FIGURE4.png", figure7, width=18, height=5.5, units="cm", dpi = "print")
+ggsave("FIGURE4_revised.png", figure7, width=18, height=5.5, units="cm", dpi = "print")
 
 # BA p < 0.05 adj-R2 = 0.09
 # AGB p < 0.05 adj-R2 = 0.13
