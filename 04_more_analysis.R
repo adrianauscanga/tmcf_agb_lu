@@ -16,6 +16,8 @@ library(cAIC4)
 
 # Load data sets
 
+load("output/rs_shorter_4p.RData")
+
 # Basal area ------------------------------------------------------------------
 
 ## Null model
@@ -833,12 +835,11 @@ lmer_ba_4a <- lmer(sqrt(basal_area_ha) ~
                      scale(altitude) + 
                      scale(slope) + 
                      scale(number_breaks) + 
-                     ndvi_annual_sd + 
+                     scale(ndvi_annual_sd) + 
                      #ndvi_sd_ts + 
                      #ndvi_min_ts + 
                      #ndwi_annual_min +
                      (1|site),
-                   REML = F,
                    data = rs_shorter_4p)
 
 lmer_ba_4b <- lmer(sqrt(basal_area_ha) ~ 

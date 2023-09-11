@@ -1276,6 +1276,8 @@ list_sites <- plots_cf_rs %>%
 rs_shorter_4p <- list_sites %>%
   left_join(rs_shorter)
 
+save(rs_shorter_4p, file = "output/rs_shorter_4p.RData")
+
 ms2 <- regsubsets((sqrt(basal_area_ha)) ~ scale(altitude) + scale(slope) + scale(number_breaks) + scale(ndvi_annual_sd) + scale(ndvi_sd_ts) + scale(ndvi_min_ts) + scale(ndwi_annual_min), data = rs_shorter, nvmax = 7)
 summary(ms2)
 
