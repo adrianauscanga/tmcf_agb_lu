@@ -510,6 +510,7 @@ time_series <- time_series %>%
   mutate(savi = (((b4 - b3) / (b4 + b3 + 0.5)) * (1.5))) 
 
 head(time_series)
+
 # 1.7. Export long dataset  ----------------------------------------------------
 
 # as csv file and RData

@@ -29,8 +29,8 @@ library(cAIC4)
 
 ts_plots <- dir_ls(path="output/ts_plots/")
 
-#2. Make a for loop for reading each file txt file
-#First, create empty variables
+# Make a for loop for reading each file txt file
+# First, create empty variables
 table <- NULL
 names <- NULL
 
@@ -807,8 +807,8 @@ save(tp_breaks, file = "output/tp_breaks.RData")
 # Breaks validation -------------------------------------------------------
 
 # After validating breaks with training points and actual plots, I found a threshold of [0.15] (absolute value)
-# Note that gradual 'clearings' are not picked up by bfast, example tp_8 in 1995-05-05, that's why 
-# it's important to include positive breaks
+# Note that gradual disturbances are not picked up by bfast, example tp_8 in 1995-05-05, that's why 
+# it's important to include positive breaks and other variables
 
 load("output/plots_breaks_dummy.RData")
 

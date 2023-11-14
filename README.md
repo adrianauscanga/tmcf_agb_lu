@@ -7,7 +7,7 @@ This repository contains scripts for organizing, analyzing, and visualizing data
 Landsat time series were obtained from Google Earth Engine.
 Forest structure data were obtained from the Mexican Forest Inventory (FI) database. To see how FI dataset was processed please refer to [this repository](https://github.com/adrianauscanga/nmo_cloudforest_landscapes) and associated [manuscript](https://doi.org/10.1007/s10021-023-00861-1).
 
-This repository, original and processed data are archive on Zenodo.
+This repository, original (input folder) and processed data (output folder) are archive on Zenodo.
 [![DOI](https://zenodo.org/badge/479808985.svg)](https://zenodo.org/badge/latestdoi/479808985)
 
 Repository structure:
